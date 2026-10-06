@@ -1,0 +1,5 @@
+# Complete CPU test/lint environment, including RL and generative integration tests.
+#   python -m pip install -r requirements-dev.txt
+-r requirements.txt
+-r requirements-generative.txt
+-e .[dev]

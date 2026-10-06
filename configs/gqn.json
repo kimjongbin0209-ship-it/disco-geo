@@ -1,0 +1,8 @@
+{
+  "dataset": "datasets/gqn_ring",
+  "output": "runs/gqn/disco/seed0",
+  "method": "disco",
+  "task": "navigation",
+  "steps": 500000,
+  "eval_every": 100
+}

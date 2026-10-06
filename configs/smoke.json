@@ -1,0 +1,15 @@
+{
+  "dataset": "datasets/smoke",
+  "output": "runs/smoke/disco",
+  "method": "disco",
+  "task": "recognition",
+  "seed": 0,
+  "steps": 64,
+  "batch_size": 2,
+  "rollout_length": 4,
+  "feature_dim": 32,
+  "channels": [8, 16],
+  "max_moves": 4,
+  "eval_every": 100,
+  "eval_episodes": 4
+}

@@ -1,0 +1,5 @@
+# TripoSplat conditioning, adapter training, generation, and Gaussian evaluation.
+# Can be installed in a separate environment without the JAX/RL dependencies.
+#   python -m pip install -r requirements-generative.txt
+# Pretrained model weights are downloaded separately via download-triposplat.
+-e .[generative]

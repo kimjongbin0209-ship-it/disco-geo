@@ -1,0 +1,18 @@
+{
+  "dataset": "datasets/objects",
+  "output": "runs/disco/seed0",
+  "method": "disco",
+  "task": "recognition",
+  "seed": 0,
+  "steps": 500000,
+  "batch_size": 16,
+  "rollout_length": 16,
+  "learning_rate": 0.0003,
+  "feature_dim": 256,
+  "channels": [32, 64, 64],
+  "max_moves": 12,
+  "move_cost": 0.02,
+  "eval_every": 100,
+  "eval_episodes": 128,
+  "ablation": "none"
+}

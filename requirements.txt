@@ -1,0 +1,10 @@
+# Complete experiment: RL, TripoSplat, graphs, and verification tools.
+# Runtime: Python 3.12 recommended (installer checks it); Conda is optional.
+# OS: Linux Ubuntu 22.04/24.04 for NVIDIA; system tools: git, tmux, rsync.
+# Python itself, tmux and the NVIDIA host driver cannot be installed by pip.
+# Full Linux/L40S setup: bash scripts/setup_vast.sh
+# CUDA GPU wheels: python -m pip install -r requirements-vast.txt
+# Run from the repository root with Python 3.11 or 3.12:
+#   python -m pip install -r requirements.txt
+# Package versions are declared in pyproject.toml to avoid duplicate constraints.
+-e .[rl,generative,report,dev]

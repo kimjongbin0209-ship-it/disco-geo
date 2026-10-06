@@ -1,0 +1,5 @@
+# NVIDIA GPU RL training on Linux; includes the default RL requirements.
+#   python -m pip install -r requirements-cuda.txt
+# Keep this JAX version synchronized with the rl extra in pyproject.toml.
+-r requirements.txt
+jax[cuda12]==0.4.38
