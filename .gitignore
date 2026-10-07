@@ -3,11 +3,6 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
-*.egg-info/
 .ruff_cache/
-datasets/
-runs/
 checkpoints/
-*.ply
-*.splat
 .DS_Store

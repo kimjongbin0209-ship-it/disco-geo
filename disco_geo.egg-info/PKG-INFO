@@ -1,0 +1,31 @@
+Metadata-Version: 2.4
+Name: disco-geo
+Version: 0.1.0
+Summary: Task-driven visual representations with Disco103 and frozen 3D generative transfer
+Requires-Python: <3.14,>=3.11
+Requires-Dist: numpy<3,>=1.26
+Requires-Dist: pillow>=10
+Provides-Extra: rl
+Requires-Dist: jax==0.4.38; extra == "rl"
+Requires-Dist: dm-haiku==0.0.13; extra == "rl"
+Requires-Dist: chex==0.1.89; extra == "rl"
+Requires-Dist: optax==0.2.4; extra == "rl"
+Requires-Dist: distrax==0.1.5; extra == "rl"
+Requires-Dist: rlax==0.1.7; extra == "rl"
+Requires-Dist: ml-collections<2,>=1; extra == "rl"
+Requires-Dist: dm-env>=1.6; extra == "rl"
+Requires-Dist: scipy>=1.10; extra == "rl"
+Requires-Dist: immutabledict>=4; extra == "rl"
+Provides-Extra: generative
+Requires-Dist: torch>=2.4; extra == "generative"
+Requires-Dist: torchvision>=0.19; extra == "generative"
+Requires-Dist: safetensors>=0.4; extra == "generative"
+Requires-Dist: tqdm>=4; extra == "generative"
+Requires-Dist: huggingface-hub>=0.25; extra == "generative"
+Provides-Extra: report
+Requires-Dist: matplotlib<4,>=3.9; extra == "report"
+Provides-Extra: gqn
+Requires-Dist: tensorflow<3,>=2.16; extra == "gqn"
+Provides-Extra: dev
+Requires-Dist: pytest>=8; extra == "dev"
+Requires-Dist: ruff>=0.9; extra == "dev"
