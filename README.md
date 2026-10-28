@@ -1,343 +1,127 @@
 # DiscoGeo
 
-DiscoGeo tests whether a released discovered RL rule makes geometric information
-more accessible in an RGB representation, then tests transfer to a pretrained
-3D generative prior. It includes actual Disco103 training and a TripoSplat
-conditioning adapter, not a reimplementation of the discovered rule.
+DiscoGeo는 **RGB 인식 보상으로 학습한 표현에서 기하 정보를 더 쉽게 읽을 수 있는지**, 그리고 그 표현을 frozen 3D 생성 모델의 conditioning으로 전이할 수 있는지 검증하는 연구 코드입니다. 공개된 Disco103 update rule을 실제로 적용하며, AC·AC+aux·미학습 CNN과 비교합니다.
 
-The default interaction task is active **same/different object recognition**.
-The agent sees a current RGB view and a reference RGB view, can rotate left or
-right, and eventually answers SAME or DIFFERENT. All identities use the same
-material. Reward is simply:
+**현재 결과:** 인식 학습과 전체 GPU 파이프라인은 완료했습니다. 이 설정에서 Disco 고유의 기하 표현 또는 3D 생성 우위는 확인하지 못했습니다. Task 설계가 다중 시점 정보 수집을 강제하지 않았고 평가에서는 초기 RGB 쌍만으로 높은 정확도를 얻었습니다. Depth probe·conditioning adapter·3D 좌표 정렬에도 해석을 제한하는 병목이 있습니다. 이것은 Disco의 일반적인 기하 학습 능력을 부정하는 결과가 아닙니다.
 
-```text
-correct final answer: +1
-incorrect answer or timeout: 0
-each camera movement: -0.02
-```
+- [상세 실패 원인 분석과 다음 실험](docs/RESULTS_AND_NEXT_STEPS_KO.md)
+- [기계 판독용 전체 결과](results/full-experiment/metrics.json), [RL CSV](results/full-experiment/rl_metrics.csv), [생성 CSV](results/full-experiment/transfer_metrics.csv)
+- [설치·실험 재현·모듈별 사용법](docs/REPRODUCING.md), [Vast/L40S 운영 가이드](docs/VAST_L40S_KO.md)
 
-No depth, pose, normals, coordinates, correspondence, reconstruction loss, or
-generative-teacher gradient enters RL representation training. The environment
-knows identity to score the answer and view adjacency to move the camera. Those
-indices are never observations. Recognition reward is task supervision.
+## 실험 범위
 
-## Losses and scientific scope
+| 항목 | 완료된 실험 |
+| --- | --- |
+| 데이터 | 절차적 물체 512개 × 12시점, 64×64 RGB; 동일 재질·고정 조명 |
+| Identity split | RL train 256 / RL validation 51 / probe train 103 / probe validation 51 / test 51 |
+| 비교 | 미학습 CNN, AC, AC+aux, Disco103, Disco−yz, Disco−aux |
+| RL 학습 | seed 0·1·2, 학습 조건별 약 500k 유효 transitions; 초기 CNN을 seed별로 맞춤 |
+| Checkpoint 선택 | 기하 점수와 독립적인 RL-validation return으로 best 선택 |
+| 기하 평가 | Frozen single-image feature의 linear depth/absolute-yaw probe 및 64-unit relative-yaw MLP |
+| Probe 표본 | Depth/absolute-yaw train 1,236 images; test 51 identities |
+| Conditioning cache | 총 128장: adapter train 89 / validation 19 / test 20 |
+| 최종 생성 | Cache test에서 4개 물체 선택; 18 encoder × 4 inputs × 3 modes + native 4개 = 220개 |
+| 생성 설정 | Flow sampling 20 steps, Gaussian 32,768개, noise seed 42 하나, adapter 30 epochs |
+| GPU | 저장된 실행 환경은 NVIDIA L40S |
 
-The reward is simple; **Disco103 is not a one-term policy-gradient algorithm**.
-Its official KL prediction/policy losses, action-value loss, and next-policy
-prediction remain intact. Removing them would change the released algorithm.
-There are no extra geometry losses. `no_yz_loss` and `no_aux_policy` are explicit
-perturbations of the frozen rule, not newly meta-learned algorithms.
+실험 설정·완료 상태는 [pipeline.json](runs/full-experiment/pipeline.json), [study summary](runs/full-experiment/study/summary.json), [transfer plan](runs/full-experiment/transfer/plan.json), [완료 기록](runs/full-experiment/transfer/completed.json)에 보존되어 있습니다. `smoke`와 `artifact-smoke`는 연결 검증용이며 아래 연구 결과에 포함하지 않습니다.
 
-The downstream adapter uses one MSE on TripoSplat's native image-conditioning
-features. Both the RL encoder and pretrained generator stay frozen. This is a
-conditioning-distillation research extension; it is **not full diffusion-model
-fine-tuning**. Generated geometry can come from TripoSplat's pretrained prior.
-The generation controls compare untrained/actor-critic/Disco features, native
-conditioning, zero conditioning, and wrong-scene conditioning. Better generations
-alone do not demonstrate emergent geometry.
+## 인식 학습과 기하 표현 결과
 
-The analytic object benchmark is intended for fast controlled experiments. It is
-not Kubric, does not guarantee that every episode requires multiple views, and
-has fixed lighting. The feedforward actor has no observation-history memory;
-its action-model LSTM is not a temporal memory. A one-view shortcut and chance
-recognition policy are meaningful failure modes. Pose probes are diagnostic;
-held-out depth probing is stronger evidence, still limited by this synthetic domain.
+아래 ±는 **3개 RL seed 간 표본 표준편차**이며 신뢰구간이 아닙니다. 정책은 선택된 best checkpoint를 deterministic argmax로 seed당 256 test episodes 평가했습니다. 기하 probe는 학습과 identity가 분리된 물체에서 평가합니다.
 
-## Install
+| 방법 | 인식 성공률 ↑ | 평균 카메라 이동 | Depth RMSE ↓ | Absolute yaw 오차 ↓ | Relative yaw 오차 ↓ |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 미학습 CNN | 48.70 ± 3.52% | 0.833 | 0.4848 ± 0.0119 | 47.38° | 48.86° |
+| AC | 81.64 ± 9.60% | 0.167 | 0.5374 ± 0.0568 | 66.91° | 60.02° |
+| AC+aux | 90.23 ± 0.78% | 0.176 | 0.5332 ± 0.0185 | 66.37° | 55.41° |
+| Disco103 | 89.32 ± 1.58% | 0.000 | 0.5631 ± 0.0205 | 65.64° | 67.25° |
+| Disco−aux | 88.15 ± 0.60% | 0.000 | 0.5507 ± 0.0390 | 57.19° | 68.85° |
+| Disco−yz | 64.32 ± 21.76% | 0.000 | 0.5147 ± 0.0238 | 51.23° | 50.16° |
 
-Use Python 3.11 or 3.12; Python 3.12 was used for local CPU verification.
+전체 metric·seed별 수치는 [원본 집계](runs/full-experiment/study/report/summary.json)와 [RL CSV](results/full-experiment/rl_metrics.csv)에 있습니다.
+
+Disco는 이 실행에서 기본 AC보다 높은 평균 인식 성공률과 작은 seed 변동을 보였지만 AC+aux를 넘어서는 우위는 확보하지 못했습니다. 세 Disco seed 모두 **greedy test 중 카메라를 한 번도 움직이지 않고** 약 89%를 달성했습니다. 학습 중에는 stochastic action sampling을 사용하므로, 이 결과가 훈련 내내 이동하지 않았다는 뜻은 아닙니다.
+
+현재 기하 probe는 학습된 표현보다 미학습 CNN에서 더 좋았습니다. Probe-train 1,236장에 대한 covariance-spectrum effective rank는 미학습 CNN **28.5–36.4**, Disco **2.17–4.22**이고, Disco 최종 ReLU feature 256차원 중 **175–198차원**이 이 표본 전체에서 0입니다. 이는 task-specific compression과 부합하지만, 중간 layer나 비선형 decoder에서도 기하 정보가 없다는 증거는 아닙니다.
+
+Depth는 **학습에 background=0을 포함하고 validation/test는 foreground만 평가**하는 목적 불일치가 있습니다. Probe-train 평균 foreground 깊이만 예측하는 상수 baseline의 test RMSE는 **0.2002**로 모든 encoder probe보다 낮습니다. 따라서 현재 depth 점수를 기하 정보의 부재로 단정하지 않습니다.
+
+![Depth·adapter·feature의 사후 진단](runs/full-experiment/audit/audit_summary.png)
+
+## Frozen TripoSplat 전이 결과
+
+RL encoder와 pretrained generator를 고정한 뒤, RL feature에서 TripoSplat의 native image-conditioning을 예측하는 adapter만 학습했습니다. Generator 전체를 fine-tuning한 실험이 아닙니다.
+
+**아래는 전부 UNREGISTERED orbit diagnostics입니다.** 생성물의 내부 좌표를 benchmark 좌표에 정렬하지 않았고, CPU renderer는 공식 rasterizer의 근사 구현입니다. 입력 시점을 제외한 11개 view를 물체별로 평균하고, 물체를 RL seed별로 평균합니다. 실제 기하 품질의 순위로 해석하지 않습니다.
+
+| 조건 | 전체 PSNR ↑ | Foreground PSNR ↑ | Silhouette IoU ↑ |
+| --- | ---: | ---: | ---: |
+| Native RGB | 10.132 | 9.191 | 0.3971 |
+| Zero conditioning | 11.324 | 9.249 | 0.4928 |
+| 미학습 CNN → adapter | 11.243 | 8.852 | 0.4833 |
+| AC → adapter | 10.922 | 8.674 | 0.4896 |
+| AC+aux → adapter | 10.820 | 8.454 | 0.4776 |
+| Disco → adapter | 11.206 | 8.543 | 0.4739 |
+| Disco shuffled | 10.782 | 8.149 | 0.4291 |
+
+전체 19개 조건의 평균·표준편차·seed별 값은 [생성 CSV](results/full-experiment/transfer_metrics.csv), 물체별 paired 값은 [원본 결과](runs/full-experiment/transfer/report/per_image.csv)에 있습니다. Native는 공통 baseline이며 zero의 반복도 독립적인 RL-seed 실험으로 세지 않습니다. 물체는 4개, noise seed는 하나뿐입니다.
+
+Disco learned가 shuffled보다 높아도 미학습 CNN에서도 같은 방향이 나타나므로 RL의 추가 이득은 확인되지 않았습니다. 정성 예시에서 native는 L자 형태를 어느 정도 보존하지만 learned 조건들은 비슷한 막대로 보입니다. 정답과 다른 유색 형상을 만드는 zero가 높은 점수를 받는 사례도 있어, 좌표와 평가 검증이 필요합니다.
+
+![Scene 49, seed 0: 입력 시점 외의 비교. 좌표 정렬 전 진단](runs/full-experiment/transfer/report/qualitative_scene49_seed0.png)
+
+Adapter 자체에서도 명확한 fitting 병목이 있습니다. Seed0 Disco의 validation MSE는 **0.53847**, train teacher를 이미지 축으로 평균한 token/channel별 상수 tensor를 출력하는 baseline은 **0.42110**입니다. Train full-token MSE도 **0.52735 > 0.40934**입니다. 모델의 per-token bias는 이 상수 해를 표현할 수 있으므로, 실패를 encoder의 정보 부족만으로 설명할 수 없습니다. 18개 adapter 모두 마지막 30 epoch에서 best를 기록해 충분한 수렴도 확인되지 않았습니다. 세부 진단은 seed0의 선택된 3개 방법과 validation 19장 범위입니다.
+
+## 실패 원인의 해석
+
+| 항목 | 확인된 증거 | 현재 가능한 해석 |
+| --- | --- | --- |
+| Task와 가설의 연결 | 즉시 답변 허용, 무작위 negative, greedy Disco 이동 0 | 초기 RGB 쌍만으로 높은 정확도를 얻어 다중 시점 정보 수집의 필요성이 약함 |
+| 관측 memory | 현재/reference RGB만 처리; history memory 없음 | 여러 시점의 누적 증거를 통합하는 정책을 학습할 구조가 없음 |
+| 표현 압축 | 최종 feature의 effective rank 감소와 표본 내 zero dimension 증가 | Task 보상이 기하 정보 보존보다 인식에 유용한 압축을 유도했을 가능성 |
+| Depth 측정 | Dense fitting과 foreground-only scoring 불일치; 상수가 더 좋음 | 표현 차이와 probe 목적 불일치가 섞여 있음 |
+| Adapter fitting | 표현 가능한 상수 baseline보다 train/validation 모두 나쁨 | Conditioning 평균과 입력별 변화를 회수하는 최적화가 미완성 |
+| 생성 평가 | 좌표 정렬 없음, 근사 renderer, 4 objects·1 noise seed | 수치 차이를 기하 품질이나 통계적으로 확립된 우위로 연결하기 어려움 |
+
+앞의 구조·수치는 관찰된 사실입니다. Reward shortcut, 표현 압축, adapter 최적화가 각각 실패에 기여한 양은 개입 실험으로 분리해야 합니다. 상세 분석에는 loss ablation의 checkpoint 차이, token sampling budget, loss의 head별 가중치, shuffled control의 분포 차이도 기록했습니다.
+
+## 다음 실험
+
+1. 기존 frozen feature로 foreground-aware depth probe와 상수·RGB·silhouette baseline을 검증합니다.
+2. Adapter를 teacher 평균에서 residual을 예측하도록 구성하고, feature 표준화·간단한 linear/PCA baseline·충분한 수렴을 확인합니다. Validation에서 평균 predictor를 이기는 것을 통과 기준으로 둡니다.
+3. 초기 view는 모호하고 다른 방향에서 구별되는 hard pair와 temporal memory를 도입합니다. No-move·고정 탐색·learned 탐색을 동일 episode에서 비교합니다.
+4. 같은 backbone과 memory에서 Disco와 AC+aux의 layer별 기하 probe·rank·인식 성능을 추적합니다.
+5. Validation에서 camera/좌표/renderer를 검증한 뒤, 미관찰 test 물체와 생성 noise seed를 확대합니다.
+
+현재 결과에 가장 잘 맞는 후속 질문은 **“다중 시점의 필요성이 task reward로 학습한 표현의 기하 정보 보존에 어떤 영향을 주는가?”**입니다. 각 단계의 검증 방법과 통과 기준은 [상세 분석](docs/RESULTS_AND_NEXT_STEPS_KO.md)에 있습니다.
+
+## 실행과 결과 재집계
+
+설치 및 전체 파이프라인의 상세 옵션은 [재현 가이드](docs/REPRODUCING.md)를 참고합니다.
 
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-```
 
-Install the profile needed for each workload from the repository root:
-
-| File | Purpose |
-| --- | --- |
-| [`requirements.txt`](requirements.txt) | Complete Python workflow: RL, generation, plots, tests/lint |
-| [`requirements-vast.txt`](requirements-vast.txt) | Python 3.12 Linux GPU profile with CUDA 12 JAX and pinned PyTorch/torchvision wheels |
-| [`requirements-system.txt`](requirements-system.txt) | OS tools and runtime conditions; not a pip input |
-| [`requirements-cuda.txt`](requirements-cuda.txt) | Linux NVIDIA RL training, including the matching CUDA JAX build |
-| [`requirements-generative.txt`](requirements-generative.txt) | TripoSplat transfer and generation; usable in a separate environment |
-| [`requirements-dev.txt`](requirements-dev.txt) | All CPU integration tests and lint, including RL and generation dependencies |
-| [`requirements-gqn.txt`](requirements-gqn.txt) | Optional TensorFlow converter; preferably a separate environment |
-
-The files select the extras declared in `pyproject.toml`, which remains the single
-source for package version constraints. They use an editable install because the
-pinned upstream sources and released Disco103 checkpoint are part of this checkout.
-
-For NVIDIA training on Linux, install the matching pinned CUDA JAX build:
-
-```bash
-python -m pip install -r requirements-cuda.txt
-python -c 'import jax; print(jax.devices())'
-```
-
-The repository includes the audited upstream DiscoRL source and the small
-released Disco103 checkpoint. No remote rule weights need to be fetched during
-training. Third-party licenses, commits and checkpoint checksum are in
-[`third_party/PROVENANCE.json`](third_party/PROVENANCE.json).
-
-## First complete run
-
-For the entire GPU experiment, including all ablations and final 3D comparisons:
-
-```bash
-bash scripts/run_full_experiment.sh
-# After interruption, repeat the same settings:
-bash scripts/run_full_experiment.sh --resume
-# Preview without allocating GPU work or downloading weights:
+# GPU 작업과 다운로드 없이 파이프라인 확인
 bash scripts/run_full_experiment.sh --dry-run
+
+# 보존된 실험 결과를 재집계·교차 검증 (Python 표준 라이브러리만 사용)
+python3 scripts/summarize_results.py \
+  --run runs/full-experiment --output results/full-experiment
 ```
 
-The wrapper uses Python from an active environment or `.venv.cuda`; optional
-`--setup` runs the Vast installer first. Defaults are 512 procedural objects,
-3 RL seeds, 500k transitions per trained variant, six encoder variants (including
-untrained), snapshots every 1,000 learner updates, and four final test objects.
-It prepares/reuses data and native conditioning, trains/probes every ablation,
-processes validation snapshots, fits matched adapters to each **best** encoder,
-then generates native/learned/zero/shuffled controls on identical test inputs.
-The final stage performs 220 generations at default settings; periodic monitoring
-adds its own jobs. Use `--snapshot-every 0` for final inference only.
+[metrics.json](results/full-experiment/metrics.json)은 원본 summary와 진단 수치를 담고, [provenance.json](results/full-experiment/provenance.json)은 입력 파일의 SHA-256과 집계 검증 내역을 기록합니다. 이 재집계는 기존 산출물의 수치 검증이며 RL·adapter 재학습, pretrained 생성 재실행, renderer parity 검증을 수행하지 않습니다.
 
-All artifacts live under `runs/full-experiment/`: `study/report/` for RL/probes,
-`transfer/report/` for final per-image/per-view/per-seed CSV/JSON, comparison PNG/PDF,
-and qualitative grids; `logs/pipeline.log` for combined process output.
-Views are averaged within image, images within RL seed, then variability is
-reported across RL seeds. Native RGB inference is shared once per test object.
-The current 3D comparison is explicitly **UNREGISTERED orbit diagnostics** using
-the approximate CPU renderer. A repeated invocation with `--resume` requires
-identical settings/features and reuses completed adapters/generations.
+RL 학습에는 RGB·정답 보상·이동 비용만 사용하며 depth/pose label이나 generative-teacher gradient는 들어가지 않습니다. 공개 Disco103의 policy/KL/value/next-policy loss는 유지합니다. `no_yz_loss`와 `no_aux_policy`는 frozen rule의 perturbation이며 새로 발견한 알고리즘이 아닙니다. 기존 CPU smoke/integration 검증은 구현 연결을 확인하며 기하 emergence 자체를 검증하지 않습니다.
 
-```bash
-python -m disco_geo prepare --output datasets/smoke --scenes 20 --views 6 --size 16
-python -m disco_geo train --config configs/smoke.json
-python -m disco_geo extract --checkpoint runs/smoke/disco/best.pkl \
-  --dataset datasets/smoke --output runs/smoke/disco/features.npy
-python -m disco_geo probe --dataset datasets/smoke \
-  --features runs/smoke/disco/features.npy --output runs/smoke/disco/probes.json \
-  --label-budget 24
-```
+## 원본과 출처
 
-This smoke run validates plumbing; its few updates and tiny test set are not a
-research result. Outputs include JSONL learning curves, best and latest
-checkpoints, frozen feature arrays, provenance, and probe metrics. Existing run
-directories are refused to prevent accidental overwrite.
+- [DiscoRL 공식 구현](https://github.com/google-deepmind/disco_rl), [논문](https://www.nature.com/articles/s41586-025-09761-x)
+- [TripoSplat 공식 inference](https://github.com/VAST-AI-Research/TripoSplat), [논문](https://arxiv.org/abs/2605.16355), [training code](https://github.com/runjie-yan/TripoSplat-Training)
+- [고정된 upstream commit·체크섬·라이선스](third_party/PROVENANCE.json)
+- [기존 audit 원본](runs/full-experiment/audit/diagnostics.json), [학습 곡선](runs/full-experiment/study/report/learning_curves.png), [snapshot probe](runs/full-experiment/study/report/snapshot_probes.csv)
 
-For a real pilot:
-
-```bash
-python -m disco_geo prepare --output datasets/objects --scenes 512 --parts 8
-python scripts/run_study.py --config configs/objects.json --steps 500000 \
-  --seeds 0 1 2 --ablations
-```
-
-The study runs an untrained encoder, the official V-trace actor-critic,
-actor-critic with the same next-policy auxiliary prediction, and Disco103. With
-`--ablations`, it also runs the two Disco loss perturbations. Each run uses a
-separate process so GPU memory is released. The shared CNN initialization is
-matched per seed. This is fresh-trajectory training, one learner update per
-rollout; the methods may still encounter different observations through their
-policies. Equal trajectories and wider hyperparameter searches are subsequent
-causal controls, not claimed as completed here.
-The runner saves a random-policy control and `summary.json` with per-seed metrics,
-means and standard deviations. Variation across three seeds is descriptive;
-it should not be treated as proof of a statistically reliable effect.
-
-The scene/shape split is 50% RL training, 10% RL validation, 20% probe training,
-10% probe validation, and 10% final test. Generated shape identities are unique
-under translation and proper cube rotations; every view stays with its identity.
-The checkpoint is selected using RL-validation return only. Probes use frozen
-single-image features before reference fusion, train-only standardization,
-validation-selected ridge regularization, a fixed 64-unit relative-yaw MLP,
-and scene-disjoint final tests. Depth is a linear map to a downsampled depth grid;
-valid foreground masks are evaluation-only. There is no scale alignment.
-
-The recognition random-answer accuracy is 50%; always answering SAME is not
-evidence of useful learning. Report accuracy together with moves and reward.
-For stable conclusions use several training seeds and larger held-out sets.
-
-## GQN
-
-Download a few official `rooms_ring_camera` TFRecord shards, not the whole dataset.
-Run conversion in an environment with the optional `gqn` dependencies (TensorFlow
-is not used by the learner):
-
-```bash
-python -m pip install -r requirements-gqn.txt
-python -m disco_geo convert-gqn /path/to/0001-of-2160.tfrecord \
-  --output datasets/gqn_ring --max-scenes 10000
-python -m disco_geo train --config configs/gqn.json
-```
-
-The navigation task has LEFT, RIGHT and STOP, plus current/goal RGB. It uses
-only terminal success and movement cost. Camera yaw constructs the private
-transition graph; sorted-angle hops may have unequal angular size. The standard
-GQN records have RGB and poses, so depth metrics are unavailable. GQN room views
-are not suitable inputs for an object-centric TripoSplat evaluation.
-
-## Go directly to TripoSplat transfer
-
-The extension is implemented against the official TripoSplat **flow-matching**
-pipeline, which samples 3D latents and decodes Gaussian splats. It replaces native
-image conditioning with tensors predicted from frozen RL features. The public
-inference API does not accept arbitrary RL features directly; the adapter is our
-research extension. There is no claim that this particular method is the best
-current baseline on the DiscoGeo benchmark.
-
-Use a separate PyTorch environment/process to keep JAX from reserving GPU memory:
-
-```bash
-python -m pip install -r requirements-generative.txt
-python -m disco_geo download-triposplat --output checkpoints/triposplat
-python -m disco_geo cache-conditioning --dataset datasets/objects \
-  --weights checkpoints/triposplat --output datasets/tripo_cache --max-items 128
-```
-
-Caching uses RGB only and pretrained DINOv3/FLUX.2 conditioning. It never reads
-the hidden geometric annotations. Cache training, validation and testing use
-different identities. Features must first be extracted for every encoder under
-comparison; this checks checkpoint/dataset provenance.
-
-```bash
-python -m disco_geo train-adapter \
-  --features runs/study/disco-none/seed0/features.npy \
-  --cache datasets/tripo_cache --output runs/adapters/disco_seed0
-```
-
-Repeat adapter training for the actor-critic and untrained features with the
-same cache, seed and budget. The small adapter can train on CPU. Native targets
-have thousands of tokens; random token subsets make each fitting step cheaper.
-
-To run the complete paired transfer experiment automatically, use actual test
-items from the cache rather than manually choosing image/scene numbers:
-
-```bash
-python scripts/run_transfer.py --cache datasets/tripo_cache \
-  --weights checkpoints/triposplat --output runs/transfer_seed0 \
-  --features disco=runs/study/disco-none/seed0/features.npy \
-    ac=runs/study/actor_critic-none/seed0/features.npy \
-    untrained=runs/study/untrained-none/seed0/features.npy \
-  --test-items 4
-```
-
-This fits each adapter with the same seed and budget, generates one native-image
-baseline per test input, then learned/zero/shuffled controls for each encoder.
-Every generation runs in its own process. `plan.json` records the selected input
-identities and settings. Optional `--diagnostic-dataset datasets/objects` also
-computes unregistered orbit metrics; registration is still needed for geometric
-interpretation. The commands below are for inspecting individual cases.
-
-Choose a **test** item from `datasets/tripo_cache/manifest.json`. Its `scene`,
-`view`, and original image path identify the common source input. For example,
-replace the example scene/view below with that actual item:
-
-```bash
-python -m disco_geo generate --weights checkpoints/triposplat \
-  --mode native --image datasets/tripo_cache/000110.png \
-  --output runs/generation/native --seed 42
-
-python -m disco_geo generate --weights checkpoints/triposplat \
-  --mode learned --features runs/study/disco-none/seed0/features.npy \
-  --adapter runs/adapters/disco_seed0/best.pt --scene 480 --view 0 \
-  --output runs/generation/disco --seed 42
-```
-
-Do not use the example numbers blindly: cache size can be less than requested
-when there are fewer unique identities. Use exactly the manifest's item values.
-Repeat with `--mode zero` and `--mode shuffled`, and with each baseline adapter.
-All use the same flow noise seed and sampling settings. Native-image encoding
-has a separate random generator so it does not consume the flow-noise stream.
-The octree decoder's global RNG is reset separately for paired point sampling.
-Learned conditioning does not use native image features at generation time.
-
-Default outputs are `object.ply`, activated `gaussians.npz`, and
-`generation.json`, plus the raw sampled camera tensor for later inspection.
-Add `--exports ply npz splat` when the additional viewer format is needed.
-Metadata records process timing, sampling time and peak PyTorch CUDA memory.
-Generation starts with 32,768 Gaussians; higher counts cost
-more to decode and render. Learned-mode flow and decoder are loaded sequentially.
-Pretrained checkpoints are not bundled or automatically downloaded.
-
-Held-out orbit diagnostics are available for the analytic object dataset:
-
-```bash
-python -m disco_geo evaluate-generation --generation runs/generation/disco \
-  --dataset datasets/objects --scene 480 --source-view 0 \
-  --output runs/generation/disco/evaluation --allow-unregistered
-```
-
-TripoSplat's internal coordinate frame may differ from the benchmark's frame.
-Unregistered metrics are explicitly diagnostics. For an interpretable comparison,
-supply `--alignment verified_transform.json`, a 4x4 similarity matrix obtained
-without optimizing against held-out test views. This evaluator uses a small CPU
-anisotropic Gaussian renderer and reports full-image PSNR, foreground PSNR and
-silhouette IoU. It does not claim numerical parity with the official rasterizer.
-The source view is excluded. The Gaussian NPZ uses the internal frame; exported
-PLY/SPLAT files apply the upstream viewer-coordinate transform.
-
-## Server and verification
-
-For the combined pilot: L40S 48 GB, 32–64 GB host RAM, about 8 vCPUs and
-100 GB writable SSD are reasonable starting allocations. With retained essentials
-and small datasets, 50–80 GB may suffice. Full-model fine-tuning is outside this
-implementation. Actual pretrained inference peak VRAM and speed must be measured
-on the target GPU; they have not been verified locally.
-The five required pretrained files total approximately 3.78 GB before caches;
-128 float16 conditioning targets need roughly 1.5 GB uncompressed.
-Only best/latest full RL checkpoints, compact periodic CNN snapshots, metrics,
-features, adapter best weights, selected 3D outputs and interpretation plots are retained.
-
-The [Korean Vast/L40S guide](docs/VAST_L40S_KO.md) covers upload, installation,
-tmux, Inactive/Stop semantics, resume, storage and conditional runtime estimation.
-`bash scripts/setup_vast.sh` prepares a Python 3.12 GPU environment; Conda is optional.
-Use `benchmark-rl` on the actual host before budgeting a full study.
-
-```bash
-python scripts/run_study.py --config configs/objects.json --steps 500000 \
-  --seeds 0 1 2 --ablations --snapshot-every 1000 --snapshot-probes
-python -m disco_geo report --study runs/study
-```
-
-Study reporting writes numeric CSV/JSON plus PNG/PDF comparisons, individual
-seed learning curves, validation snapshot probes and depth prediction panels.
-For periodic 3D, replace `--snapshot-probes` with `--snapshot-cache datasets/tripo_cache`
-and `--snapshot-weights checkpoints/triposplat`. Each run first trains RL, then
-processes its saved iterations in separate processes on fixed **probe_val** objects.
-Each snapshot gets a freshly fitted adapter with matched settings; the RL encoder
-and losses remain unchanged. These are postprocessed iteration outputs, not concurrent
-3D inference during RL. `scripts/run_snapshots.py --plan-only` previews selected jobs.
-Resume with `--resume`; `latest.pkl` restores learner/optimizer, actor/environment state
-and RNG. Final tests remain separate from iteration monitors.
-
-```bash
-python -m pip install -r requirements-dev.txt
-python -m pytest -q
-ruff check disco_geo scripts tests
-```
-
-Tests verify scene separation, no annotation-file reads by the training loader,
-camera adjacency, sparse rewards/terminal resets, exact native head shapes,
-finite compiled Disco103 updates with changing CNN weights and fixed rule weights,
-matched CNN initialization, a real official TripoSplat transformer receiving
-adapter conditioning, encoder-gradient isolation, and probe/renderer conventions.
-The reduced official model also runs flow sampling, octree/Gaussian decoding,
-PLY/SPLAT export and repeatable point sampling; it has random weights and does
-not verify the pretrained model's output quality.
-
-Local CPU tests and smoke training do not validate full pretrained generation
-quality, CUDA memory use, GQN conversion, or the emergence hypothesis. A real
-multi-seed GPU experiment and held-out generative evaluation are still required.
-
-## Sources
-
-- [DiscoRL official repository](https://github.com/google-deepmind/disco_rl)
-- [DiscoRL paper](https://www.nature.com/articles/s41586-025-09761-x)
-- [TripoSplat official inference](https://github.com/VAST-AI-Research/TripoSplat)
-- [TripoSplat paper](https://arxiv.org/abs/2605.16355)
-- [TripoSplat full training code](https://github.com/runjie-yan/TripoSplat-Training)
-- [GQN datasets](https://github.com/google-deepmind/gqn-datasets)
+결과 정리와 분석 갱신: 2026-10-28. 이 문서 갱신에서 새 RL 학습이나 3D 생성은 실행하지 않았습니다.
