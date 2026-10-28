@@ -1,0 +1,22 @@
+{
+  "output": "runs/integration/disco",
+  "purpose": "development",
+  "method": "disco",
+  "recipe": "fresh",
+  "maze_size": 9,
+  "camera_resolution": 64,
+  "seed": 0,
+  "steps": 8,
+  "num_envs": 1,
+  "rollout_length": 4,
+  "channels": [
+    4,
+    8
+  ],
+  "feature_dim": 16,
+  "hidden_size": 16,
+  "learning_rate": 0.0003,
+  "eval_every": 1,
+  "validation_seeds": [],
+  "save_trajectories": true
+}

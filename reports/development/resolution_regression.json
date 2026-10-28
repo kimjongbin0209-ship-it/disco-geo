@@ -1,0 +1,11 @@
+{
+  "status": "detected_and_guarded_not_a_research_result",
+  "memory_maze_version": "1.0.3",
+  "invalid_camera_resolution": 32,
+  "symptom": "9 consecutive RGB frames were identical uniform target color while physics position changed",
+  "upstream_formula": "B = int(2 * sqrt(image_height // 64)); image[:, -B:] = color",
+  "cause": "Below64, B=0 and negative-zero slices cover the entire image.",
+  "fix": "Keep upstream unmodified; reject camera_resolution<64 at real factory and TrainConfig; doctor checks spatial RGB variation.",
+  "invalid_artifacts": "runs/debug-invalid-32px",
+  "use_invalid_artifacts_for_scientific_claims": false
+}

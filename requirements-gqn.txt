@@ -1,4 +1,0 @@
-# Optional local GQN TFRecord conversion; TensorFlow is not used by the RL learner.
-# A separate conversion environment keeps TensorFlow independent of JAX/CUDA.
-#   python -m pip install -r requirements-gqn.txt
--e .[gqn]

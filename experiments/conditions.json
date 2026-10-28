@@ -1,0 +1,102 @@
+{
+  "schema_version": 2,
+  "status": "development_plan_not_results",
+  "base_config": {
+    "smoke": "configs/smoke.json",
+    "pilot": "configs/pilot.json"
+  },
+  "base_methods": ["actor_critic_aux", "disco"],
+  "conditions": [
+    {
+      "id": "fresh",
+      "axis": "baseline",
+      "overrides": {},
+      "learning_signal": "released rule on fresh rollouts"
+    },
+    {
+      "id": "replay",
+      "axis": "sequence_replay",
+      "overrides": {"recipe": "recent_replay"},
+      "learning_signal": "released rule on fresh plus recent replayed sequences"
+    },
+    {
+      "id": "self_imitation",
+      "axis": "success_retention",
+      "overrides": {"self_imitation_weight": 0.5},
+      "learning_signal": "adds positive-advantage imitation of replayed reward-containing chunks"
+    },
+    {
+      "id": "fd_outcome",
+      "axis": "feedback_distillation",
+      "overrides": {"teacher": "outcome", "distillation_weight": 0.5},
+      "learning_signal": "adds KL to an outcome-conditioned self-teacher on successful steps"
+    },
+    {
+      "id": "fd_memory",
+      "axis": "feedback_memory",
+      "overrides": {"teacher": "outcome_memory", "teacher_query": "counterfactual_success",
+                    "distillation_weight": 0.5},
+      "learning_signal": "teacher also sees the previous same-target success frame; success query on all steps"
+    },
+    {
+      "id": "fd_outcome_shuffled",
+      "axis": "feedback_control",
+      "overrides": {"teacher": "outcome", "teacher_feedback": "shuffled",
+                    "teacher_gate": "always", "distillation_weight": 0.5},
+      "learning_signal": "same compute and masks, feedback pairing destroyed; gate forced open"
+    },
+    {
+      "id": "fd_outcome_replay",
+      "axis": "feedback_plus_replay",
+      "overrides": {"recipe": "recent_replay", "teacher": "outcome", "distillation_weight": 0.5},
+      "learning_signal": "feedback distillation combined with sequence replay"
+    },
+    {
+      "id": "teacher_only",
+      "axis": "teacher_validation",
+      "overrides": {"teacher": "outcome_memory", "teacher_gate": "never"},
+      "learning_signal": "teacher trained and validated, never distilled (student equals fresh)"
+    }
+  ],
+  "stages": [
+    {
+      "id": "P0_smoke",
+      "profile": "smoke",
+      "seeds": [0],
+      "conditions": "all",
+      "purpose": "wiring and logging on the real benchmark; not a result"
+    },
+    {
+      "id": "P1_learning_gate",
+      "profile": "pilot",
+      "seeds": [0, 1, 2],
+      "conditions": ["fresh", "teacher_only"],
+      "purpose": "G2: above-random return and a memory-reset drop for both base methods; G4a/G4b teacher evidence"
+    },
+    {
+      "id": "P2_pilot_matrix",
+      "profile": "pilot",
+      "seeds": [0, 1, 2, 3, 4],
+      "conditions": "all",
+      "purpose": "descriptive effects and variances for the power plan; not confirmatory"
+    }
+  ],
+  "matching": [
+    "same_recurrent_backbone",
+    "same_initialization_per_seed",
+    "same_seed_bank",
+    "same_reward",
+    "fresh_interactions",
+    "learner_network_steps_reported_for_compute_comparison"
+  ],
+  "primary_endpoints": [
+    "seen_hidden_target_location_rmse",
+    "known_wall_balanced_iou",
+    "matched_revisit_efficiency_gain"
+  ],
+  "planned_training_seeds": [0, 1, 2, 3, 4],
+  "large_scale_training_started": false,
+  "seed_stage": "pilot_descriptive_only",
+  "confirmatory_design_locked": false,
+  "confirmatory_seed_count": null
+}

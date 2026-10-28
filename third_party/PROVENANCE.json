@@ -3,13 +3,7 @@
     "repository": "https://github.com/google-deepmind/disco_rl",
     "commit": "9059a29f7121d60948f25ef165e08e050e9399c8",
     "license": "Apache-2.0 code; CC-BY-4.0 non-code materials",
-    "checkpoint_sha256": "dac840a15b81e8805326363458c33979626172618f620d9e6e170315388530aa"
-  },
-  "triposplat": {
-    "repository": "https://github.com/VAST-AI-Research/TripoSplat",
-    "commit": "d8db9e018b413dd9c4a9fe22463781bf98e8e68d",
-    "license": "MIT",
-    "local_changes": ["Change pipeline model import and decoder's local pipeline import to package-relative; add package initializer"],
-    "weights": "Not bundled. Explicit download required."
+    "checkpoint_sha256": "dac840a15b81e8805326363458c33979626172618f620d9e6e170315388530aa",
+    "use": "Released update-rule weights and unmodified upstream source; recurrent policy and collection are implemented in disco_spatial."
   }
 }

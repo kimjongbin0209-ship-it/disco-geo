@@ -1,15 +1,27 @@
 {
-  "dataset": "datasets/smoke",
-  "output": "runs/smoke/disco",
+  "output": "runs/smoke/disco-fresh-seed0",
+  "purpose": "development",
   "method": "disco",
-  "task": "recognition",
+  "recipe": "fresh",
+  "maze_size": 9,
+  "camera_resolution": 64,
   "seed": 0,
-  "steps": 64,
-  "batch_size": 2,
-  "rollout_length": 4,
-  "feature_dim": 32,
-  "channels": [8, 16],
-  "max_moves": 4,
-  "eval_every": 100,
-  "eval_episodes": 4
+  "steps": 2048,
+  "num_envs": 2,
+  "rollout_length": 32,
+  "channels": [
+    32,
+    64,
+    64
+  ],
+  "feature_dim": 128,
+  "hidden_size": 128,
+  "learning_rate": 0.0003,
+  "eval_every": 1000,
+  "validation_seeds": [
+    1000000
+  ],
+  "save_trajectories": false,
+  "teacher_horizon": 64,
+  "teacher_warmup_updates": 10
 }

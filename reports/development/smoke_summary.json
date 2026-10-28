@@ -1,0 +1,741 @@
+{
+  "date": "2026-10-28",
+  "status": "smoke_pipeline_on_real_benchmark_not_research_results",
+  "scientific_result": false,
+  "training_runs": {
+    "acaux-fresh": {
+      "updates": 33,
+      "transitions": 2048,
+      "wall_seconds": 28.7,
+      "learner_network_steps": 4228,
+      "train_reward_events": 0,
+      "final_validation_return": 0.0,
+      "teacher_validation_return": null,
+      "replay_updates": 0,
+      "self_imitation_updates": 0,
+      "teacher_updates": 0,
+      "distillation_updates": 0,
+      "teacher_gate": null
+    },
+    "disco-fresh": {
+      "updates": 33,
+      "transitions": 2048,
+      "wall_seconds": 46.7,
+      "learner_network_steps": 35972,
+      "train_reward_events": 0,
+      "final_validation_return": 0.0,
+      "teacher_validation_return": null,
+      "replay_updates": 0,
+      "self_imitation_updates": 0,
+      "teacher_updates": 0,
+      "distillation_updates": 0,
+      "teacher_gate": null
+    },
+    "disco-replay": {
+      "updates": 33,
+      "transitions": 2048,
+      "wall_seconds": 66.1,
+      "learner_network_steps": 54130,
+      "train_reward_events": 0,
+      "final_validation_return": 0.0,
+      "teacher_validation_return": null,
+      "replay_updates": 32,
+      "self_imitation_updates": 0,
+      "teacher_updates": 0,
+      "distillation_updates": 0,
+      "teacher_gate": null
+    },
+    "disco-sil": {
+      "updates": 33,
+      "transitions": 2048,
+      "wall_seconds": 45.9,
+      "learner_network_steps": 35972,
+      "train_reward_events": 0,
+      "final_validation_return": 0.0,
+      "teacher_validation_return": null,
+      "replay_updates": 0,
+      "self_imitation_updates": 0,
+      "teacher_updates": 0,
+      "distillation_updates": 0,
+      "teacher_gate": null
+    },
+    "disco-teacher-memory-cf-always": {
+      "updates": 33,
+      "transitions": 2048,
+      "wall_seconds": 77.7,
+      "learner_network_steps": 67804,
+      "train_reward_events": 0,
+      "final_validation_return": 0.0,
+      "teacher_validation_return": 0.0,
+      "replay_updates": 0,
+      "self_imitation_updates": 0,
+      "teacher_updates": 30,
+      "distillation_updates": 30,
+      "teacher_gate": {
+        "teacher_gate_mode": "always",
+        "teacher_gate_open": true,
+        "teacher_gate_evidence": {
+          "teacher_information_gain_success": 0.0,
+          "teacher_shuffled_information_gain_success": 0.0,
+          "teacher_local_improvement": 0.0,
+          "teacher_copy_rate": 0.0
+        },
+        "teacher_gate_observed": 30
+      }
+    },
+    "disco-teacher-outcome": {
+      "updates": 33,
+      "transitions": 2048,
+      "wall_seconds": 76.8,
+      "learner_network_steps": 67804,
+      "train_reward_events": 0,
+      "final_validation_return": 0.0,
+      "teacher_validation_return": 0.0,
+      "replay_updates": 0,
+      "self_imitation_updates": 0,
+      "teacher_updates": 30,
+      "distillation_updates": 0,
+      "teacher_gate": {
+        "teacher_gate_mode": "evidence",
+        "teacher_gate_open": false,
+        "teacher_gate_evidence": {
+          "teacher_information_gain_success": 0.0,
+          "teacher_shuffled_information_gain_success": 0.0,
+          "teacher_local_improvement": 0.0,
+          "teacher_copy_rate": 0.0
+        },
+        "teacher_gate_observed": 30
+      }
+    },
+    "disco-teacher-outcome-shuffled": {
+      "updates": 33,
+      "transitions": 2048,
+      "wall_seconds": 77.7,
+      "learner_network_steps": 67804,
+      "train_reward_events": 0,
+      "final_validation_return": 0.0,
+      "teacher_validation_return": 0.0,
+      "replay_updates": 0,
+      "self_imitation_updates": 0,
+      "teacher_updates": 30,
+      "distillation_updates": 0,
+      "teacher_gate": {
+        "teacher_gate_mode": "evidence",
+        "teacher_gate_open": false,
+        "teacher_gate_evidence": {
+          "teacher_information_gain_success": 0.0,
+          "teacher_shuffled_information_gain_success": 0.0,
+          "teacher_local_improvement": 0.0,
+          "teacher_copy_rate": 0.0
+        },
+        "teacher_gate_observed": 30
+      }
+    }
+  },
+  "collections": {
+    "probe_final_test": {
+      "episodes": 2,
+      "layouts": [
+        "11dbe771b8ab",
+        "dc99395386fe"
+      ],
+      "oracle_floor_pixels_in_walls_fraction": [
+        0.0029705756662949103,
+        0.00448523043470249
+      ]
+    },
+    "probe_train": {
+      "episodes": 4,
+      "layouts": [
+        "779f4afb0e07",
+        "90e0dfe5f811",
+        "d725b0fbb65c",
+        "e3de2f73ba83"
+      ],
+      "oracle_floor_pixels_in_walls_fraction": [
+        0.0025123095100794825,
+        0.0029315944808902556,
+        0.0021565146771949945,
+        0.0016989626149931493
+      ]
+    },
+    "probe_validation": {
+      "episodes": 2,
+      "layouts": [
+        "38666d7eb1cb",
+        "e0398abff362"
+      ],
+      "oracle_floor_pixels_in_walls_fraction": [
+        0.00138855324221038,
+        0.002802750677714303
+      ]
+    }
+  },
+  "abilities": {
+    "acaux-fresh-init": {
+      "belief": {
+        "seen_hidden_rmse": 4.286207762328415,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.2922993318416502,
+        "origin_position_rmse": 5.068523565031203,
+        "place_recall_at_1": 0.2803478063196181,
+        "place_chance": 0.05478409117818168,
+        "traversable_ap": 0.9420168101852842
+      },
+      "image_features": {
+        "seen_hidden_rmse": 4.301676731687424,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.30434762709563107,
+        "origin_position_rmse": 5.150915870198553,
+        "place_recall_at_1": 0.2984200954762446,
+        "place_chance": 0.05478409117818168,
+        "traversable_ap": 0.9529949677683989
+      },
+      "action_history": {
+        "seen_hidden_rmse": 4.271318555023051,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.33925798187032397,
+        "origin_position_rmse": 5.489189403850985
+      }
+    },
+    "acaux-fresh-latest": {
+      "belief": {
+        "seen_hidden_rmse": 4.383040377182471,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.32968238020624696,
+        "origin_position_rmse": 4.72768965963132,
+        "place_recall_at_1": 0.1236644691975449,
+        "place_chance": 0.05478409117818168,
+        "traversable_ap": 0.9279315726432251
+      },
+      "image_features": {
+        "seen_hidden_rmse": 4.3044613604120014,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.32722201313647253,
+        "origin_position_rmse": 5.109460951613688,
+        "place_recall_at_1": 0.32410775176176404,
+        "place_chance": 0.05478409117818168,
+        "traversable_ap": 0.9521251111628093
+      },
+      "action_history": {
+        "seen_hidden_rmse": 4.271318555023051,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.33925798187032397,
+        "origin_position_rmse": 5.489189403850985
+      }
+    },
+    "disco-fresh-init": {
+      "belief": {
+        "seen_hidden_rmse": 4.286207762328415,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.2922993318416502,
+        "origin_position_rmse": 5.068523565031203,
+        "place_recall_at_1": 0.2803478063196181,
+        "place_chance": 0.05478409117818168,
+        "traversable_ap": 0.9420168101852842
+      },
+      "image_features": {
+        "seen_hidden_rmse": 4.301676731687424,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.30434762709563107,
+        "origin_position_rmse": 5.150915870198553,
+        "place_recall_at_1": 0.2984200954762446,
+        "place_chance": 0.05478409117818168,
+        "traversable_ap": 0.9529949677683989
+      },
+      "action_history": {
+        "seen_hidden_rmse": 4.271318555023051,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.33925798187032397,
+        "origin_position_rmse": 5.489189403850985
+      }
+    },
+    "disco-fresh-latest": {
+      "belief": {
+        "seen_hidden_rmse": 4.384342214777793,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.3581618574558932,
+        "origin_position_rmse": 4.833020300273116,
+        "place_recall_at_1": 0.19572630143214367,
+        "place_chance": 0.05478409117818168,
+        "traversable_ap": 0.900155167593049
+      },
+      "image_features": {
+        "seen_hidden_rmse": 4.318237205814029,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.3321301226369696,
+        "origin_position_rmse": 5.357171327194779,
+        "place_recall_at_1": 0.2816549215730848,
+        "place_chance": 0.05478409117818168,
+        "traversable_ap": 0.9647976607883266
+      },
+      "action_history": {
+        "seen_hidden_rmse": 4.271318555023051,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.33925798187032397,
+        "origin_position_rmse": 5.489189403850985
+      }
+    },
+    "disco-sil-latest": {
+      "belief": {
+        "seen_hidden_rmse": 4.384342214777793,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.3581618574558932,
+        "origin_position_rmse": 4.833020300273116,
+        "place_recall_at_1": 0.19572630143214367,
+        "place_chance": 0.05478409117818168,
+        "traversable_ap": 0.900155167593049
+      },
+      "image_features": {
+        "seen_hidden_rmse": 4.318237205814029,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.3321301226369696,
+        "origin_position_rmse": 5.357171327194779,
+        "place_recall_at_1": 0.2816549215730848,
+        "place_chance": 0.05478409117818168,
+        "traversable_ap": 0.9647976607883266
+      },
+      "action_history": {
+        "seen_hidden_rmse": 4.271318555023051,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.33925798187032397,
+        "origin_position_rmse": 5.489189403850985
+      }
+    },
+    "disco-teacher-memory-cf-always-latest": {
+      "belief": {
+        "seen_hidden_rmse": 4.384273638795364,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.3584807160088459,
+        "origin_position_rmse": 4.83133365550035,
+        "place_recall_at_1": 0.19572630143214367,
+        "place_chance": 0.05478409117818168,
+        "traversable_ap": 0.8996468973265421
+      },
+      "image_features": {
+        "seen_hidden_rmse": 4.318612711087921,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.3321301226369696,
+        "origin_position_rmse": 5.3558792986364505,
+        "place_recall_at_1": 0.2816549215730848,
+        "place_chance": 0.05478409117818168,
+        "traversable_ap": 0.9648204531864784
+      },
+      "action_history": {
+        "seen_hidden_rmse": 4.271318555023051,
+        "seen_hidden_train_mean_rmse": 4.293234212894312,
+        "known_wall_balanced_iou": 0.33925798187032397,
+        "origin_position_rmse": 5.489189403850985
+      }
+    }
+  },
+  "navigation": {
+    "acaux-fresh-latest": {
+      "none": {
+        "mean_return": 0.0,
+        "n_matched_pairs": 0
+      },
+      "reset_every_step": {
+        "mean_return": 0.0,
+        "n_matched_pairs": 0
+      }
+    },
+    "disco-fresh-latest": {
+      "none": {
+        "mean_return": 0.0,
+        "n_matched_pairs": 0
+      },
+      "reset_every_step": {
+        "mean_return": 0.0,
+        "n_matched_pairs": 0
+      }
+    },
+    "teacher-acting": {
+      "none": {
+        "mean_return": 0.0,
+        "n_matched_pairs": 0
+      }
+    }
+  },
+  "offline_teacher_validation": {
+    "offline.json": {
+      "schema_version": 1,
+      "status": "offline_teacher_pathway_check_not_rl_result",
+      "behavior_policy": "reference_explore (exact sticky-mixture logits as teacher base)",
+      "representation": "untrained encoder/GRU belief, initialization PRNGKey(0)",
+      "episodes": 36,
+      "seeds": [
+        900000,
+        900035
+      ],
+      "horizon": 64,
+      "rewards": 12,
+      "train_episodes": 24,
+      "held_out_episodes": 12,
+      "held_out_success_steps": 128,
+      "held_out_known_steps": 12000,
+      "curve": [
+        {
+          "iteration": 1,
+          "train_nll": 0.7423353791236877,
+          "held_out_information_gain_success": -0.00041538476943969727,
+          "held_out_shuffled_information_gain_success": -0.0004109676228836179,
+          "held_out_information_gain_known": -5.1406739657977596e-05
+        },
+        {
+          "iteration": 100,
+          "train_nll": 0.734093964099884,
+          "held_out_information_gain_success": -0.012720281258225441,
+          "held_out_shuffled_information_gain_success": -0.00971697736531496,
+          "held_out_information_gain_known": -0.004069388844072819
+        },
+        {
+          "iteration": 250,
+          "train_nll": 0.7235666513442993,
+          "held_out_information_gain_success": -0.052928052842617035,
+          "held_out_shuffled_information_gain_success": -0.026379257440567017,
+          "held_out_information_gain_known": -0.012832623906433582
+        },
+        {
+          "iteration": 500,
+          "train_nll": 0.7093762755393982,
+          "held_out_information_gain_success": -0.11227796971797943,
+          "held_out_shuffled_information_gain_success": -0.04582366347312927,
+          "held_out_information_gain_known": -0.026196403428912163
+        },
+        {
+          "iteration": 1000,
+          "train_nll": 0.6880453824996948,
+          "held_out_information_gain_success": -0.18797104060649872,
+          "held_out_shuffled_information_gain_success": -0.05588039010763168,
+          "held_out_information_gain_known": -0.051849041134119034
+        },
+        {
+          "iteration": 2000,
+          "train_nll": 0.6522152423858643,
+          "held_out_information_gain_success": -0.318435937166214,
+          "held_out_shuffled_information_gain_success": -0.07943776994943619,
+          "held_out_information_gain_known": -0.10466015338897705
+        }
+      ],
+      "collection_seconds": 194.64394420897588,
+      "interpretation": "Positive held-out gain above the shuffled control means outcome feedback carries action information beyond the history for this behavior policy."
+    },
+    "variants.json": {
+      "schema_version": 1,
+      "status": "offline_teacher_pathway_check_not_rl_result",
+      "behavior_policy": "reference_explore (exact sticky-mixture logits as teacher base)",
+      "representation": "untrained encoder/GRU belief, initialization PRNGKey(0)",
+      "episodes": 60,
+      "seeds": [
+        900000,
+        900059
+      ],
+      "horizon": 64,
+      "rewards": 24,
+      "variants": [
+        {
+          "teacher_hidden": 128,
+          "teacher_l2": 0.0,
+          "curve": [
+            {
+              "iteration": 1,
+              "train_objective": 0.7526549696922302,
+              "held_out_information_gain_success": -2.874752135539893e-05,
+              "held_out_shuffled_information_gain_success": -2.9714545235037804e-05,
+              "held_out_information_gain_known": -5.6762848544167355e-05
+            },
+            {
+              "iteration": 100,
+              "train_objective": 0.7473347187042236,
+              "held_out_information_gain_success": -0.00499204033985734,
+              "held_out_shuffled_information_gain_success": -0.0013275424716994166,
+              "held_out_information_gain_known": -0.003552376991137862
+            },
+            {
+              "iteration": 250,
+              "train_objective": 0.740935742855072,
+              "held_out_information_gain_success": -0.02444537915289402,
+              "held_out_shuffled_information_gain_success": -0.007905908860266209,
+              "held_out_information_gain_known": -0.009223828092217445
+            },
+            {
+              "iteration": 500,
+              "train_objective": 0.7307393550872803,
+              "held_out_information_gain_success": -0.08760359138250351,
+              "held_out_shuffled_information_gain_success": -0.025724610313773155,
+              "held_out_information_gain_known": -0.02001027576625347
+            },
+            {
+              "iteration": 1000,
+              "train_objective": 0.7152785658836365,
+              "held_out_information_gain_success": -0.15704435110092163,
+              "held_out_shuffled_information_gain_success": -0.05930112302303314,
+              "held_out_information_gain_known": -0.03658130392432213
+            },
+            {
+              "iteration": 2000,
+              "train_objective": 0.689909040927887,
+              "held_out_information_gain_success": -0.28598034381866455,
+              "held_out_shuffled_information_gain_success": -0.09264171123504639,
+              "held_out_information_gain_known": -0.07013703137636185
+            }
+          ],
+          "best_held_out_margin": 9.67023879638873e-07,
+          "train_episodes": 40,
+          "held_out_episodes": 20,
+          "held_out_success_steps": 384,
+          "held_out_known_steps": 20000
+        },
+        {
+          "teacher_hidden": 128,
+          "teacher_l2": 0.001,
+          "curve": [
+            {
+              "iteration": 1,
+              "train_objective": 0.9511855840682983,
+              "held_out_information_gain_success": -2.774743734335061e-05,
+              "held_out_shuffled_information_gain_success": -2.862788642232772e-05,
+              "held_out_information_gain_known": -5.510733899427578e-05
+            },
+            {
+              "iteration": 100,
+              "train_objective": 0.7724918127059937,
+              "held_out_information_gain_success": -2.4684122763574123e-05,
+              "held_out_shuffled_information_gain_success": -2.1671332433470525e-05,
+              "held_out_information_gain_known": -0.00017478287918493152
+            },
+            {
+              "iteration": 250,
+              "train_objective": 0.7529202699661255,
+              "held_out_information_gain_success": 4.342741522123106e-05,
+              "held_out_shuffled_information_gain_success": 4.3430172809166834e-05,
+              "held_out_information_gain_known": -0.00017508913879282773
+            },
+            {
+              "iteration": 500,
+              "train_objective": 0.7525928020477295,
+              "held_out_information_gain_success": 4.335997437010519e-05,
+              "held_out_shuffled_information_gain_success": 4.335997437010519e-05,
+              "held_out_information_gain_known": -0.00017512889462523162
+            },
+            {
+              "iteration": 1000,
+              "train_objective": 0.7525927424430847,
+              "held_out_information_gain_success": 4.333762262831442e-05,
+              "held_out_shuffled_information_gain_success": 4.333762262831442e-05,
+              "held_out_information_gain_known": -0.00017514992214273661
+            },
+            {
+              "iteration": 2000,
+              "train_objective": 0.7525928020477295,
+              "held_out_information_gain_success": 4.33422792411875e-05,
+              "held_out_shuffled_information_gain_success": 4.33422792411875e-05,
+              "held_out_information_gain_known": -0.00017514562932774425
+            }
+          ],
+          "best_held_out_margin": 8.80449078977108e-07,
+          "train_episodes": 40,
+          "held_out_episodes": 20,
+          "held_out_success_steps": 384,
+          "held_out_known_steps": 20000
+        },
+        {
+          "teacher_hidden": 16,
+          "teacher_l2": 0.0,
+          "curve": [
+            {
+              "iteration": 1,
+              "train_objective": 0.7526549696922302,
+              "held_out_information_gain_success": 5.815527401864529e-06,
+              "held_out_shuffled_information_gain_success": 4.826074928132584e-06,
+              "held_out_information_gain_known": -7.579351404274348e-06
+            },
+            {
+              "iteration": 100,
+              "train_objective": 0.7499641180038452,
+              "held_out_information_gain_success": -0.0021252662409096956,
+              "held_out_shuffled_information_gain_success": -0.00026735998108051717,
+              "held_out_information_gain_known": -0.0017723831115290523
+            },
+            {
+              "iteration": 250,
+              "train_objective": 0.7464304566383362,
+              "held_out_information_gain_success": -0.006610598880797625,
+              "held_out_shuffled_information_gain_success": -0.0027679521590471268,
+              "held_out_information_gain_known": -0.004898292478173971
+            },
+            {
+              "iteration": 500,
+              "train_objective": 0.7425122261047363,
+              "held_out_information_gain_success": -0.0085676284506917,
+              "held_out_shuffled_information_gain_success": -0.004270340781658888,
+              "held_out_information_gain_known": -0.008241157978773117
+            },
+            {
+              "iteration": 1000,
+              "train_objective": 0.7362497448921204,
+              "held_out_information_gain_success": -0.029512599110603333,
+              "held_out_shuffled_information_gain_success": -0.015311836265027523,
+              "held_out_information_gain_known": -0.015133465640246868
+            },
+            {
+              "iteration": 2000,
+              "train_objective": 0.7284470796585083,
+              "held_out_information_gain_success": -0.09436684846878052,
+              "held_out_shuffled_information_gain_success": -0.03576020151376724,
+              "held_out_information_gain_known": -0.025892816483974457
+            }
+          ],
+          "best_held_out_margin": 9.894524737319443e-07,
+          "train_episodes": 40,
+          "held_out_episodes": 20,
+          "held_out_success_steps": 384,
+          "held_out_known_steps": 20000
+        },
+        {
+          "teacher_hidden": 0,
+          "teacher_l2": 0.0,
+          "curve": [
+            {
+              "iteration": 1,
+              "train_objective": 0.7526549696922302,
+              "held_out_information_gain_success": -0.001673659309744835,
+              "held_out_shuffled_information_gain_success": -0.000777268607635051,
+              "held_out_information_gain_known": -0.0006789403851144016
+            },
+            {
+              "iteration": 100,
+              "train_objective": 0.7493812441825867,
+              "held_out_information_gain_success": -0.020222358405590057,
+              "held_out_shuffled_information_gain_success": -0.000483933457871899,
+              "held_out_information_gain_known": -0.0014076211955398321
+            },
+            {
+              "iteration": 250,
+              "train_objective": 0.7472109794616699,
+              "held_out_information_gain_success": -0.047396909445524216,
+              "held_out_shuffled_information_gain_success": -0.0023646128829568624,
+              "held_out_information_gain_known": -0.002807758981361985
+            },
+            {
+              "iteration": 500,
+              "train_objective": 0.7452695965766907,
+              "held_out_information_gain_success": -0.09272406250238419,
+              "held_out_shuffled_information_gain_success": -0.005977175664156675,
+              "held_out_information_gain_known": -0.004858214408159256
+            },
+            {
+              "iteration": 1000,
+              "train_objective": 0.7432911396026611,
+              "held_out_information_gain_success": -0.18355964124202728,
+              "held_out_shuffled_information_gain_success": -0.009321371093392372,
+              "held_out_information_gain_known": -0.0077807302586734295
+            },
+            {
+              "iteration": 2000,
+              "train_objective": 0.74140465259552,
+              "held_out_information_gain_success": -0.3851356506347656,
+              "held_out_shuffled_information_gain_success": -0.012462577782571316,
+              "held_out_information_gain_known": -0.012414908967912197
+            }
+          ],
+          "best_held_out_margin": -0.0008963907021097839,
+          "train_episodes": 40,
+          "held_out_episodes": 20,
+          "held_out_success_steps": 384,
+          "held_out_known_steps": 20000
+        },
+        {
+          "teacher_hidden": 0,
+          "teacher_l2": 0.01,
+          "curve": [
+            {
+              "iteration": 1,
+              "train_objective": 0.7526549696922302,
+              "held_out_information_gain_success": -0.001673659309744835,
+              "held_out_shuffled_information_gain_success": -0.000777268607635051,
+              "held_out_information_gain_known": -0.0006789403851144016
+            },
+            {
+              "iteration": 100,
+              "train_objective": 0.7519991993904114,
+              "held_out_information_gain_success": -0.0018808393506333232,
+              "held_out_shuffled_information_gain_success": -0.00034554916783235967,
+              "held_out_information_gain_known": -0.0004039979539811611
+            },
+            {
+              "iteration": 250,
+              "train_objective": 0.7519992589950562,
+              "held_out_information_gain_success": -0.0018764124251902103,
+              "held_out_shuffled_information_gain_success": -0.000343411898938939,
+              "held_out_information_gain_known": -0.00040327562601305544
+            },
+            {
+              "iteration": 500,
+              "train_objective": 0.7519992589950562,
+              "held_out_information_gain_success": -0.0018764166161417961,
+              "held_out_shuffled_information_gain_success": -0.000343416933901608,
+              "held_out_information_gain_known": -0.00040327501483261585
+            },
+            {
+              "iteration": 1000,
+              "train_objective": 0.7519992589950562,
+              "held_out_information_gain_success": -0.0018764158012345433,
+              "held_out_shuffled_information_gain_success": -0.0003434166719671339,
+              "held_out_information_gain_known": -0.00040327486931346357
+            },
+            {
+              "iteration": 2000,
+              "train_objective": 0.7519992589950562,
+              "held_out_information_gain_success": -0.0018764096312224865,
+              "held_out_shuffled_information_gain_success": -0.00034341958235017955,
+              "held_out_information_gain_known": -0.00040327507304027677
+            }
+          ],
+          "best_held_out_margin": -0.0008963907021097839,
+          "train_episodes": 40,
+          "held_out_episodes": 20,
+          "held_out_success_steps": 384,
+          "held_out_known_steps": 20000
+        }
+      ],
+      "collection_seconds": 329.9670129159931,
+      "interpretation": "Positive held-out gain above the shuffled control means outcome feedback carries action information beyond the history for this behavior policy."
+    }
+  },
+  "observations": [
+    "2,048-step policies earned no training reward; self-imitation never found a reward chunk and the evidence gate stayed closed, so success paths are covered by unit tests only.",
+    "disco-sil equals disco-fresh exactly because no auxiliary batch was formed: shared initialization and determinism hold.",
+    "Untrained init features already exceed chance on place retrieval and traversability; those families must be compared against the init control, not chance.",
+    "Offline, on a fixed observation-independent explore policy with sparse reward, no teacher variant reached positive held-out information gain; the gate would stay closed."
+  ],
+  "provenance_note": "Each smoke run's provenance.json holds the exact source hashes it ran with; the hashes below describe the tree when this summary was written.",
+  "source_tree_at_summary_sha256": {
+    "disco_spatial/__init__.py": "0fa65b4426900ea3117b2634ade98a6c72cbae763a4fede6afdf2dd8c12e69e7",
+    "disco_spatial/__main__.py": "963fd1db37db51439ac313dafcff8032a4d70e005fe9b10a9b3958de36e5b94b",
+    "disco_spatial/agents.py": "88d59c5c905d5283ad481036ac7be07af93125a7f3e3eb99be31a29823492e96",
+    "disco_spatial/artifacts.py": "2b168b39ffedef91ba2a2e328a76a9865153680db23be259a529cc71b8faaa0c",
+    "disco_spatial/cli.py": "72221444bfcb97f178e9f3a27784c8b3931a98061e93b5d875cec7e4e1a6951b",
+    "disco_spatial/config.py": "f663dd18d3bbe9974028dde5ca7b72642e3f0bae9e78bd5f7538cd79aab06e0f",
+    "disco_spatial/envs/__init__.py": "666bb359e3131dbd9e1a8c5e8f1b8ff53d50f93b7f3d27f8dc2c6b250f24bf5d",
+    "disco_spatial/envs/memory_maze.py": "200acb3899aae5653126458307a94108166982ac63bd1e1330bb7678852907fa",
+    "disco_spatial/evaluation/__init__.py": "a498e4fb9fb1c4c02fe8dfd6acb95cb2a92e73faf2a281ba1cfabb06567f0d40",
+    "disco_spatial/evaluation/labels.py": "52bc9876b73def601952aacb0694010ff7b58e5859d59a035c0f7e0468f12ff7",
+    "disco_spatial/evaluation/metrics.py": "454b1b4c25c940d47e105c995bf8a62005e42c22e57eb47b282a9ff371e5bf30",
+    "disco_spatial/evaluation/navigation.py": "c7bd9d3783943c78d8b598afe7c0d428261e3066d0eb16d0ec406421c4a5a861",
+    "disco_spatial/evaluation/probes.py": "eff06eb84c17dc6b57f25eb3ff3cd05cbc4c69a7206f234614676fcaa5b28f98",
+    "disco_spatial/evaluation/protocol.py": "01e5c56f9826d756de6ef5be8cc67b8000c86d0056cf174631157e6edf99ab00",
+    "disco_spatial/evaluation/report.py": "4e35ceadf47af83c12d88b389ef170164d257b51e0ae0ed018443c784b34302c",
+    "disco_spatial/evaluation/suite.py": "608ff68aa462c84f3ccf6d638e30ab144bf2f11e708702efd7346414fea36bba",
+    "disco_spatial/evaluation/telemetry.py": "3d5f05856d23389eb41a0285ba4c2a8e5d0337f560b9b6d9862a13fc3ae22ccf",
+    "disco_spatial/feedback.py": "a311c54378bf30c3d387e64fe4b42bcca191c5ed5c3e87dc64c5e7263f7294a0",
+    "disco_spatial/io.py": "6f955f1dc2e250db0301638b8547d092970098eb96e7eb09e629caea2e32dafb",
+    "disco_spatial/methods.py": "b91e6f2a952f3bba0f031e5263878a4061ee73356509fa986b3e683b64df87fe",
+    "disco_spatial/models.py": "23960380914d7a24fec55c159ff9d4f851da3554ff6fdee9e58b444bfc47899d",
+    "disco_spatial/replay.py": "8a358af912142f30c2732da15affc3a244f71180bbe4afb6f664ea970da27da6",
+    "disco_spatial/teacher.py": "c5590bdfb71f75806377b503d48f0f3eaa41a21312c499de271837b16706a171",
+    "disco_spatial/training.py": "f047e72301db7ecc726a995c8763f1bd581404b918812440a8007530c1e0cf52",
+    "disco_spatial/trajectory.py": "2776c5f4c0c894f2921d179dc828fe8c1e58697ffdd3b47ba7119e1655a46b3f"
+  }
+}

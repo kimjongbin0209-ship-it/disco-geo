@@ -1,0 +1,172 @@
+{
+  "date": "2026-10-28",
+  "status": "development_integration_passed",
+  "scientific_result": false,
+  "unit_tests_passed": 78,
+  "runtime": {
+    "python": "3.12.14 (main, Aug 25 2026, 13:50:33) [Clang 22.1.3 ]",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "packages": {
+      "numpy": "2.3.5",
+      "jax": "0.4.38",
+      "jaxlib": "0.4.38",
+      "dm-haiku": "0.0.13",
+      "optax": "0.2.4",
+      "rlax": "0.1.7",
+      "dm-env": "1.6",
+      "memory-maze": "1.0.3",
+      "dm-control": "1.0.50",
+      "mujoco": "3.17.0",
+      "labmaze": "1.0.6",
+      "gym": "0.26.2"
+    },
+    "renderer_tested": true,
+    "environment": {
+      "environment": "memory-maze",
+      "environment_version": "1.0.3",
+      "dm_control_version": "1.0.50",
+      "mujoco_version": "3.17.0",
+      "labmaze_version": "1.0.6",
+      "maze_size": 9,
+      "camera_resolution": 64,
+      "control_freq": 4.0,
+      "seed": 1000000,
+      "reward": "upstream +1 on requested target; no shaping",
+      "source_url": "https://github.com/jurgisp/memory-maze",
+      "wrapper_version": 1,
+      "action_names": [
+        "noop",
+        "forward",
+        "left",
+        "right",
+        "forward_left",
+        "forward_right"
+      ],
+      "seed_semantics": "seed plus reset index identifies a procedural realization"
+    },
+    "rgb_shape": [
+      64,
+      64,
+      3
+    ],
+    "learner_keys": [
+      "rgb"
+    ],
+    "evaluation_sidecar_keys": [
+      "agent_dir",
+      "agent_pos",
+      "maze_layout",
+      "target_color",
+      "target_pos",
+      "target_vec",
+      "targets_pos",
+      "targets_vec"
+    ],
+    "changed_rgb_fraction": 0.5322265625,
+    "distinct_rgb_frames": 5,
+    "spatial_rgb_range": 165,
+    "position_delta": 0.2564875167437795,
+    "reward": 0.0
+  },
+  "tiny_official_environment_runs": {
+    "fresh": {
+      "completion": {
+        "purpose": "development",
+        "transitions": 8,
+        "updates": 2,
+        "wall_seconds": 2.1923317079781555,
+        "validation_performed": false,
+        "best_validation_return": null,
+        "latest_checkpoint_sha256": "427bc9263ae88ed4db26a7471843e10eb48e872f5388e4281af68a8521c088c5",
+        "scientific_result": false,
+        "sdpo_teacher_trained": false
+      },
+      "replay_updates": 0,
+      "all_losses_finite": true
+    },
+    "replay": {
+      "completion": {
+        "purpose": "development",
+        "transitions": 8,
+        "updates": 2,
+        "wall_seconds": 4.547898332995828,
+        "validation_performed": false,
+        "best_validation_return": null,
+        "latest_checkpoint_sha256": "be6b31b726c3bfc1a9bdf9cc72b385963760a3748c788706c73ac7c545dc635c",
+        "scientific_result": false,
+        "sdpo_teacher_trained": false
+      },
+      "replay_updates": 1,
+      "all_losses_finite": true
+    }
+  },
+  "common_history_checks": [
+    {
+      "partition": "probe_train",
+      "steps": 16,
+      "distinct_rgb_frames": 17,
+      "layout_id": "41fb9079c52a6863efab420162601550f5796808e4125501db04022d52873ae6"
+    },
+    {
+      "partition": "probe_validation",
+      "steps": 16,
+      "distinct_rgb_frames": 17,
+      "layout_id": "38666d7eb1cbd434681daa86d4697c62178acd29781eda9084491b0b8737a11a"
+    },
+    {
+      "partition": "probe_final_test",
+      "steps": 16,
+      "distinct_rgb_frames": 17,
+      "layout_id": "52ecd6fbe7a25c30ac01813ff8678fb29725f26327ce9fc320dc7dfefaf3d2a4"
+    }
+  ],
+  "generic_readout_pipeline_completed": true,
+  "primary_ability_suite_completed": false,
+  "teacher_implemented_or_validated": false,
+  "gpu_benchmark_performed": false,
+  "development_consumed_seeds_not_a_locked_confirmatory_bank": [
+    0,
+    1000000,
+    3000000,
+    4000000,
+    5000000
+  ],
+  "invalid_32px_runs_quarantined": "runs/debug-invalid-32px",
+  "sources_sha256": {
+    "runs/environment/local_cpu.json": "2816f7840140e6ff3eea463eb695ae1d24e3120f10351fbcdb6f92ecc090731a",
+    "reports/development/tests.xml": "05bcf926a32b531827c8bd3e9613c5e87b55c5b03cc918ffdc412fd371c2fcb2",
+    "runs/integration/real-disco-fresh/completed.json": "a76e2dee6b13a01f6b27239cb1d0b69953e2ab1f2f92789af5a072fcc30a7e77",
+    "runs/integration/real-disco-replay/completed.json": "f3b573b1d1b148cac72862566974bd0ba4ab03c15db7193279bdfd8fd099fdcc",
+    "datasets/integration/probe_train/manifest.json": "cf0085acaa708a4b31977d306206a30ed2196db5902b5dfc5eb8137f54915fe4",
+    "datasets/integration/probe_validation/manifest.json": "975438d9db32795510b60f023954ab7b7f85ebee8427b52a173a52d782c92a0f",
+    "datasets/integration/probe_final_test/manifest.json": "eaac164ce5b43ec15c30d92295f5e0e00fd3dfaca4d36b4615bedcf647e5c662",
+    "runs/integration/probe_location.json": "f551a8428dd981bde86a49fcefec22e99338a39484ee5e027e8342380577d113"
+  },
+  "source_tree_at_verification_sha256": {
+    "disco_spatial/__init__.py": "0fa65b4426900ea3117b2634ade98a6c72cbae763a4fede6afdf2dd8c12e69e7",
+    "disco_spatial/__main__.py": "963fd1db37db51439ac313dafcff8032a4d70e005fe9b10a9b3958de36e5b94b",
+    "disco_spatial/agents.py": "88d59c5c905d5283ad481036ac7be07af93125a7f3e3eb99be31a29823492e96",
+    "disco_spatial/artifacts.py": "2b168b39ffedef91ba2a2e328a76a9865153680db23be259a529cc71b8faaa0c",
+    "disco_spatial/cli.py": "72221444bfcb97f178e9f3a27784c8b3931a98061e93b5d875cec7e4e1a6951b",
+    "disco_spatial/config.py": "f663dd18d3bbe9974028dde5ca7b72642e3f0bae9e78bd5f7538cd79aab06e0f",
+    "disco_spatial/envs/__init__.py": "666bb359e3131dbd9e1a8c5e8f1b8ff53d50f93b7f3d27f8dc2c6b250f24bf5d",
+    "disco_spatial/envs/memory_maze.py": "200acb3899aae5653126458307a94108166982ac63bd1e1330bb7678852907fa",
+    "disco_spatial/evaluation/__init__.py": "a498e4fb9fb1c4c02fe8dfd6acb95cb2a92e73faf2a281ba1cfabb06567f0d40",
+    "disco_spatial/evaluation/labels.py": "52bc9876b73def601952aacb0694010ff7b58e5859d59a035c0f7e0468f12ff7",
+    "disco_spatial/evaluation/metrics.py": "454b1b4c25c940d47e105c995bf8a62005e42c22e57eb47b282a9ff371e5bf30",
+    "disco_spatial/evaluation/navigation.py": "c7bd9d3783943c78d8b598afe7c0d428261e3066d0eb16d0ec406421c4a5a861",
+    "disco_spatial/evaluation/probes.py": "eff06eb84c17dc6b57f25eb3ff3cd05cbc4c69a7206f234614676fcaa5b28f98",
+    "disco_spatial/evaluation/protocol.py": "01e5c56f9826d756de6ef5be8cc67b8000c86d0056cf174631157e6edf99ab00",
+    "disco_spatial/evaluation/report.py": "4e35ceadf47af83c12d88b389ef170164d257b51e0ae0ed018443c784b34302c",
+    "disco_spatial/evaluation/suite.py": "608ff68aa462c84f3ccf6d638e30ab144bf2f11e708702efd7346414fea36bba",
+    "disco_spatial/evaluation/telemetry.py": "3d5f05856d23389eb41a0285ba4c2a8e5d0337f560b9b6d9862a13fc3ae22ccf",
+    "disco_spatial/feedback.py": "a311c54378bf30c3d387e64fe4b42bcca191c5ed5c3e87dc64c5e7263f7294a0",
+    "disco_spatial/io.py": "6f955f1dc2e250db0301638b8547d092970098eb96e7eb09e629caea2e32dafb",
+    "disco_spatial/methods.py": "b91e6f2a952f3bba0f031e5263878a4061ee73356509fa986b3e683b64df87fe",
+    "disco_spatial/models.py": "23960380914d7a24fec55c159ff9d4f851da3554ff6fdee9e58b444bfc47899d",
+    "disco_spatial/replay.py": "8a358af912142f30c2732da15affc3a244f71180bbe4afb6f664ea970da27da6",
+    "disco_spatial/teacher.py": "c5590bdfb71f75806377b503d48f0f3eaa41a21312c499de271837b16706a171",
+    "disco_spatial/training.py": "f047e72301db7ecc726a995c8763f1bd581404b918812440a8007530c1e0cf52",
+    "disco_spatial/trajectory.py": "2776c5f4c0c894f2921d179dc828fe8c1e58697ffdd3b47ba7119e1655a46b3f"
+  }
+}
