@@ -1,8 +1,54 @@
+# Python environments
 .venv/
 .venv.*/
+/venv/
+/env/
+
+# Python bytecode and packaging artifacts
 __pycache__/
 *.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Test, lint, and coverage caches
 .pytest_cache/
 .ruff_cache/
-checkpoints/
+.mypy_cache/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Generated datasets, model weights, and experiment results
+/datasets/
+/checkpoints/
+/runs/
+
+# Download caches and notebook checkpoints
+.cache/
+.hf_home/
+.ipynb_checkpoints/
+
+# Logs and temporary editor files
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+
+# Local environment settings (keep reusable templates)
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# Operating system metadata
 .DS_Store
+._*
+Thumbs.db

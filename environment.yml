@@ -1,9 +1,0 @@
-# Optional Conda alternative. Run from this checkout on the Linux GPU server.
-name: discogeo
-channels:
-  - conda-forge
-dependencies:
-  - python=3.12
-  - pip
-  - pip:
-      - -r requirements-vast.txt

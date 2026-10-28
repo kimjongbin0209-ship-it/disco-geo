@@ -1,127 +1,160 @@
-# DiscoGeo
+# DiscoSpatial
 
-DiscoGeo는 **RGB 인식 보상으로 학습한 표현에서 기하 정보를 더 쉽게 읽을 수 있는지**, 그리고 그 표현을 frozen 3D 생성 모델의 conditioning으로 전이할 수 있는지 검증하는 연구 코드입니다. 공개된 Disco103 update rule을 실제로 적용하며, AC·AC+aux·미학습 CNN과 비교합니다.
+**제한된 reward로 어떤 공간 능력이 형성되는가?** 공개 Disco103 학습 규칙을 recurrent RGB agent에 적용하고, 경험 재사용과 사후 피드백이 능력별로 미치는 효과를 연구합니다.
 
-**현재 결과:** 인식 학습과 전체 GPU 파이프라인은 완료했습니다. 이 설정에서 Disco 고유의 기하 표현 또는 3D 생성 우위는 확인하지 못했습니다. Task 설계가 다중 시점 정보 수집을 강제하지 않았고 평가에서는 초기 RGB 쌍만으로 높은 정확도를 얻었습니다. Depth probe·conditioning adapter·3D 좌표 정렬에도 해석을 제한하는 병목이 있습니다. 이것은 Disco의 일반적인 기하 학습 능력을 부정하는 결과가 아닙니다.
+주 benchmark는 **Memory Maze**입니다. 원래 task의 목표 접촉 +1 보상만 사용하며, 지도·위치·깊이·최단 경로는 actor나 teacher에 제공하지 않습니다. TripoSplat과 기존 물체 인식 실험은 활성 연구에서 분리했습니다. [과거 실험 복구 안내](docs/LEGACY_ARCHIVE.md)
 
-- [상세 실패 원인 분석과 다음 실험](docs/RESULTS_AND_NEXT_STEPS_KO.md)
-- [기계 판독용 전체 결과](results/full-experiment/metrics.json), [RL CSV](results/full-experiment/rl_metrics.csv), [생성 CSV](results/full-experiment/transfer_metrics.csv)
-- [설치·실험 재현·모듈별 사용법](docs/REPRODUCING.md), [Vast/L40S 운영 가이드](docs/VAST_L40S_KO.md)
+[연구 설계: 공간 능력과 SDPO형 피드백 증류](docs/SDPO_SPATIAL_RESEARCH_PLAN_KO.md) · [연구 프로토콜](docs/RESEARCH_PROTOCOL_KO.md) · [구현·학습 규약](docs/METHODS.md) · [실험 조건표](experiments/conditions.json)
 
-## 실험 범위
+## 현재 구현과 검증 범위
 
-| 항목 | 완료된 실험 |
+| 항목 | 상태 |
 | --- | --- |
-| 데이터 | 절차적 물체 512개 × 12시점, 64×64 RGB; 동일 재질·고정 조명 |
-| Identity split | RL train 256 / RL validation 51 / probe train 103 / probe validation 51 / test 51 |
-| 비교 | 미학습 CNN, AC, AC+aux, Disco103, Disco−yz, Disco−aux |
-| RL 학습 | seed 0·1·2, 학습 조건별 약 500k 유효 transitions; 초기 CNN을 seed별로 맞춤 |
-| Checkpoint 선택 | 기하 점수와 독립적인 RL-validation return으로 best 선택 |
-| 기하 평가 | Frozen single-image feature의 linear depth/absolute-yaw probe 및 64-unit relative-yaw MLP |
-| Probe 표본 | Depth/absolute-yaw train 1,236 images; test 51 identities |
-| Conditioning cache | 총 128장: adapter train 89 / validation 19 / test 20 |
-| 최종 생성 | Cache test에서 4개 물체 선택; 18 encoder × 4 inputs × 3 modes + native 4개 = 220개 |
-| 생성 설정 | Flow sampling 20 steps, Gaussian 32,768개, noise seed 42 하나, adapter 30 epochs |
-| GPU | 저장된 실행 환경은 NVIDIA L40S |
+| 실제 Memory Maze RGB-only wrapper와 평가 sidecar 분리 | 구현; 로컬 실제 reset/step 확인 |
+| 평가용 render telemetry (segmentation visibility, depth 역투영 known cell, coarse depth) | 구현; 재렌더 RGB가 관측과 픽셀 일치, floor 99.8%·wall 99.7% cell 일치 |
+| CNN + previous action/reward + GRU + sequential unroll | 구현; online/unroll·reset·history gradient 검사; block 단위 prefix 재구성 |
+| 공개 Disco103 / AC / AC+next-policy auxiliary | 구현; 실제 고정 rule을 사용한 learner 검사 |
+| Fresh·recent sequence replay·positive-advantage self-imitation | 구현; 실제 benchmark smoke 실행 |
+| SDPO형 feedback self-teacher (outcome / outcome+success memory, shuffled 통제, 증거 gate, teacher acting) | **구현, 유용성 미검증**; Bayes posterior 복원 단위 검사, smoke 실행; 고정 explore 정책의 offline 점검에서 held-out 정보 이득 없음(gate 닫힘) |
+| 여섯 능력군 suite·navigation(primary 3)·seed 집계 report | 구현; smoke 규모로 실제 데이터에 실행 |
+| 새 연구의 성능·창발 주장 | 아직 없음; smoke 실행은 연결 검증이지 연구 결과가 아님 ([요약](reports/development/smoke_summary.json)) |
 
-실험 설정·완료 상태는 [pipeline.json](runs/full-experiment/pipeline.json), [study summary](runs/full-experiment/study/summary.json), [transfer plan](runs/full-experiment/transfer/plan.json), [완료 기록](runs/full-experiment/transfer/completed.json)에 보존되어 있습니다. `smoke`와 `artifact-smoke`는 연결 검증용이며 아래 연구 결과에 포함하지 않습니다.
+## 연구 질문과 평가
 
-## 인식 학습과 기하 표현 결과
+- **H1:** 동일한 recurrent backbone과 제한된 reward에서 Disco는 AC+aux보다 공간 정보를 잘 보존·활용하는가?
+- **H2:** 과거 reward의 단순 재사용을 넘어 feedback-conditioned distillation이 추가 이득을 주는가?
+- **H3:** Teacher의 개선 신호가 유용한 사후 feedback 때문인가, 새로운 감독 정보나 추가 연산 때문인가?
 
-아래 ±는 **3개 RL seed 간 표본 표준편차**이며 신뢰구간이 아닙니다. 정책은 선택된 best checkpoint를 deterministic argmax로 seed당 256 test episodes 평가했습니다. 기하 probe는 학습과 identity가 분리된 물체에서 평가합니다.
+능력은 자기 위치/이동 추정, 보이지 않는 물체의 기억, 장소 재인식, 지도·연결 관계, 국소 기하/행동 가능성, 실제 탐색의 여섯 군으로 나눕니다. 주 지표는 **seen-hidden target 위치, causally known wall map, 조건을 맞춘 재방문 효율**입니다. OOD는 별도 능력 개수가 아니라 이 능력들의 일반화 축입니다.
 
-| 방법 | 인식 성공률 ↑ | 평균 카메라 이동 | Depth RMSE ↓ | Absolute yaw 오차 ↓ | Relative yaw 오차 ↓ |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| 미학습 CNN | 48.70 ± 3.52% | 0.833 | 0.4848 ± 0.0119 | 47.38° | 48.86° |
-| AC | 81.64 ± 9.60% | 0.167 | 0.5374 ± 0.0568 | 66.91° | 60.02° |
-| AC+aux | 90.23 ± 0.78% | 0.176 | 0.5332 ± 0.0185 | 66.37° | 55.41° |
-| Disco103 | 89.32 ± 1.58% | 0.000 | 0.5631 ± 0.0205 | 65.64° | 67.25° |
-| Disco−aux | 88.15 ± 0.60% | 0.000 | 0.5507 ± 0.0390 | 57.19° | 68.85° |
-| Disco−yz | 64.32 ± 21.76% | 0.000 | 0.5147 ± 0.0238 | 51.23° | 50.16° |
+Frozen probe에서 정보가 읽히는 것, 새 controller로 전이하는 것, 동결한 actor가 실제로 활용하는 것을 분리합니다. Layout/episode 단위 split과 seed/layout 단위 통계를 사용하며 frame 수를 독립 표본 수로 세지 않습니다. 계획한 5 seeds는 pilot용이며 confirmatory 표본 수는 power 계획 후 별도로 고정합니다. 전체 visibility telemetry가 없는 generic readout을 주 능력 평가로 부르지 않습니다.
 
-전체 metric·seed별 수치는 [원본 집계](runs/full-experiment/study/report/summary.json)와 [RL CSV](results/full-experiment/rl_metrics.csv)에 있습니다.
+## 모델과 학습
 
-Disco는 이 실행에서 기본 AC보다 높은 평균 인식 성공률과 작은 seed 변동을 보였지만 AC+aux를 넘어서는 우위는 확보하지 못했습니다. 세 Disco seed 모두 **greedy test 중 카메라를 한 번도 움직이지 않고** 약 89%를 달성했습니다. 학습 중에는 stochastic action sampling을 사용하므로, 이 결과가 훈련 내내 이동하지 않았다는 뜻은 아닙니다.
+```text
+RGB → CNN(SiLU) → signed projection + LayerNorm → image feature
+                       + previous action / previous reward
+                       → GRU → belief state → 공식 알고리즘별 heads
+```
 
-현재 기하 probe는 학습된 표현보다 미학습 CNN에서 더 좋았습니다. Probe-train 1,236장에 대한 covariance-spectrum effective rank는 미학습 CNN **28.5–36.4**, Disco **2.17–4.22**이고, Disco 최종 ReLU feature 256차원 중 **175–198차원**이 이 표본 전체에서 0입니다. 이는 task-specific compression과 부합하지만, 중간 layer나 비선형 decoder에서도 기하 정보가 없다는 증거는 아닙니다.
+Disco103의 update-rule 가중치는 고정하고 시각 encoder·GRU·policy/prediction/value heads를 학습합니다. Action-model LSTM과 actor GRU는 별개입니다. `is_first`를 저장하고, rollout 시작 hidden state에서 실제 sequential unroll을 수행합니다. LAST는 bootstrap에만 사용하고 원래 continuation discount를 보존합니다.
 
-Depth는 **학습에 background=0을 포함하고 validation/test는 foreground만 평가**하는 목적 불일치가 있습니다. Probe-train 평균 foreground 깊이만 예측하는 상수 baseline의 test RMSE는 **0.2002**로 모든 encoder probe보다 낮습니다. 따라서 현재 depth 점수를 기하 정보의 부재로 단정하지 않습니다.
+Recent replay는 raw episode sequence를 저장합니다. 현재 encoder와 recurrent state를 episode 시작부터 재계산하고 원래 behavior logits를 유지합니다. Fresh/replay의 gradient를 한 번에 혼합하고 meta-rule state·EMA는 fresh stream만으로 한 번 갱신합니다. Replay age와 과도한 log-ratio를 제한하며 이 규약 자체를 Disco의 확장으로 기록합니다.
 
-![Depth·adapter·feature의 사후 진단](runs/full-experiment/audit/audit_summary.png)
+SDPO형 증류는 `L = L_Disco,fresh [+ α·L_replay] + λ_SIL·L_SIL + λ_T·L_teacher + λ_SD·gate·KL(student ‖ stopgrad(teacher_EMA))`입니다. Teacher는 학생 belief(stop-gradient) 위의 residual head `base + Δ(belief, feedback)`이며, 자기 attempt의 reward outcome과 같은 episode·같은 target 색의 이전 성공 frame만 봅니다. 학습된 Δ는 log P(outcome | history, action)을 추정하므로 success query가 soft policy improvement가 되고, 그 기댓값은 self-imitation과 같습니다(H2의 예측). 증류는 shuffled 통제보다 나은 held-out 정보량이 확인될 때만 열립니다. [설계와 근거](docs/SDPO_SPATIAL_RESEARCH_PLAN_KO.md) · [세부 규약](docs/METHODS.md)
 
-## Frozen TripoSplat 전이 결과
+## 설치
 
-RL encoder와 pretrained generator를 고정한 뒤, RL feature에서 TripoSplat의 native image-conditioning을 예측하는 adapter만 학습했습니다. Generator 전체를 fine-tuning한 실험이 아닙니다.
-
-**아래는 전부 UNREGISTERED orbit diagnostics입니다.** 생성물의 내부 좌표를 benchmark 좌표에 정렬하지 않았고, CPU renderer는 공식 rasterizer의 근사 구현입니다. 입력 시점을 제외한 11개 view를 물체별로 평균하고, 물체를 RL seed별로 평균합니다. 실제 기하 품질의 순위로 해석하지 않습니다.
-
-| 조건 | 전체 PSNR ↑ | Foreground PSNR ↑ | Silhouette IoU ↑ |
-| --- | ---: | ---: | ---: |
-| Native RGB | 10.132 | 9.191 | 0.3971 |
-| Zero conditioning | 11.324 | 9.249 | 0.4928 |
-| 미학습 CNN → adapter | 11.243 | 8.852 | 0.4833 |
-| AC → adapter | 10.922 | 8.674 | 0.4896 |
-| AC+aux → adapter | 10.820 | 8.454 | 0.4776 |
-| Disco → adapter | 11.206 | 8.543 | 0.4739 |
-| Disco shuffled | 10.782 | 8.149 | 0.4291 |
-
-전체 19개 조건의 평균·표준편차·seed별 값은 [생성 CSV](results/full-experiment/transfer_metrics.csv), 물체별 paired 값은 [원본 결과](runs/full-experiment/transfer/report/per_image.csv)에 있습니다. Native는 공통 baseline이며 zero의 반복도 독립적인 RL-seed 실험으로 세지 않습니다. 물체는 4개, noise seed는 하나뿐입니다.
-
-Disco learned가 shuffled보다 높아도 미학습 CNN에서도 같은 방향이 나타나므로 RL의 추가 이득은 확인되지 않았습니다. 정성 예시에서 native는 L자 형태를 어느 정도 보존하지만 learned 조건들은 비슷한 막대로 보입니다. 정답과 다른 유색 형상을 만드는 zero가 높은 점수를 받는 사례도 있어, 좌표와 평가 검증이 필요합니다.
-
-![Scene 49, seed 0: 입력 시점 외의 비교. 좌표 정렬 전 진단](runs/full-experiment/transfer/report/qualitative_scene49_seed0.png)
-
-Adapter 자체에서도 명확한 fitting 병목이 있습니다. Seed0 Disco의 validation MSE는 **0.53847**, train teacher를 이미지 축으로 평균한 token/channel별 상수 tensor를 출력하는 baseline은 **0.42110**입니다. Train full-token MSE도 **0.52735 > 0.40934**입니다. 모델의 per-token bias는 이 상수 해를 표현할 수 있으므로, 실패를 encoder의 정보 부족만으로 설명할 수 없습니다. 18개 adapter 모두 마지막 30 epoch에서 best를 기록해 충분한 수렴도 확인되지 않았습니다. 세부 진단은 seed0의 선택된 3개 방법과 validation 19장 범위입니다.
-
-## 실패 원인의 해석
-
-| 항목 | 확인된 증거 | 현재 가능한 해석 |
-| --- | --- | --- |
-| Task와 가설의 연결 | 즉시 답변 허용, 무작위 negative, greedy Disco 이동 0 | 초기 RGB 쌍만으로 높은 정확도를 얻어 다중 시점 정보 수집의 필요성이 약함 |
-| 관측 memory | 현재/reference RGB만 처리; history memory 없음 | 여러 시점의 누적 증거를 통합하는 정책을 학습할 구조가 없음 |
-| 표현 압축 | 최종 feature의 effective rank 감소와 표본 내 zero dimension 증가 | Task 보상이 기하 정보 보존보다 인식에 유용한 압축을 유도했을 가능성 |
-| Depth 측정 | Dense fitting과 foreground-only scoring 불일치; 상수가 더 좋음 | 표현 차이와 probe 목적 불일치가 섞여 있음 |
-| Adapter fitting | 표현 가능한 상수 baseline보다 train/validation 모두 나쁨 | Conditioning 평균과 입력별 변화를 회수하는 최적화가 미완성 |
-| 생성 평가 | 좌표 정렬 없음, 근사 renderer, 4 objects·1 noise seed | 수치 차이를 기하 품질이나 통계적으로 확립된 우위로 연결하기 어려움 |
-
-앞의 구조·수치는 관찰된 사실입니다. Reward shortcut, 표현 압축, adapter 최적화가 각각 실패에 기여한 양은 개입 실험으로 분리해야 합니다. 상세 분석에는 loss ablation의 checkpoint 차이, token sampling budget, loss의 head별 가중치, shuffled control의 분포 차이도 기록했습니다.
-
-## 다음 실험
-
-1. 기존 frozen feature로 foreground-aware depth probe와 상수·RGB·silhouette baseline을 검증합니다.
-2. Adapter를 teacher 평균에서 residual을 예측하도록 구성하고, feature 표준화·간단한 linear/PCA baseline·충분한 수렴을 확인합니다. Validation에서 평균 predictor를 이기는 것을 통과 기준으로 둡니다.
-3. 초기 view는 모호하고 다른 방향에서 구별되는 hard pair와 temporal memory를 도입합니다. No-move·고정 탐색·learned 탐색을 동일 episode에서 비교합니다.
-4. 같은 backbone과 memory에서 Disco와 AC+aux의 layer별 기하 probe·rank·인식 성능을 추적합니다.
-5. Validation에서 camera/좌표/renderer를 검증한 뒤, 미관찰 test 물체와 생성 noise seed를 확대합니다.
-
-현재 결과에 가장 잘 맞는 후속 질문은 **“다중 시점의 필요성이 task reward로 학습한 표현의 기하 정보 보존에 어떤 영향을 주는가?”**입니다. 각 단계의 검증 방법과 통과 기준은 [상세 분석](docs/RESULTS_AND_NEXT_STEPS_KO.md)에 있습니다.
-
-## 실행과 결과 재집계
-
-설치 및 전체 파이프라인의 상세 옵션은 [재현 가이드](docs/REPRODUCING.md)를 참고합니다.
+Python **3.12**를 사용합니다. 다음 환경 stack은 로컬 macOS CPU 연결 검증에 사용했습니다. Linux CUDA와 EGL은 target host에서 별도로 검사합니다.
 
 ```bash
 python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 
-# GPU 작업과 다운로드 없이 파이프라인 확인
-bash scripts/run_full_experiment.sh --dry-run
-
-# 보존된 실험 결과를 재집계·교차 검증 (Python 표준 라이브러리만 사용)
-python3 scripts/summarize_results.py \
-  --run runs/full-experiment --output results/full-experiment
+python -m disco_spatial --help
+python -m disco_spatial protocol --config configs/development.json
 ```
 
-[metrics.json](results/full-experiment/metrics.json)은 원본 summary와 진단 수치를 담고, [provenance.json](results/full-experiment/provenance.json)은 입력 파일의 SHA-256과 집계 검증 내역을 기록합니다. 이 재집계는 기존 산출물의 수치 검증이며 RL·adapter 재학습, pretrained 생성 재실행, renderer parity 검증을 수행하지 않습니다.
+Memory Maze 1.0.3은 dm_env 경로에서도 import 과정에 Gym을 요구하여 이를 명시적으로 pin했습니다. 실제 실행은 dm_env interface를 사용합니다. 의존성 버전은 `pyproject.toml`에 고정합니다. Memory Maze의 border 구현이 64 미만에서 영상을 덮으므로 실제 환경은 64픽셀 이상을 강제합니다.
 
-RL 학습에는 RGB·정답 보상·이동 비용만 사용하며 depth/pose label이나 generative-teacher gradient는 들어가지 않습니다. 공개 Disco103의 policy/KL/value/next-policy loss는 유지합니다. `no_yz_loss`와 `no_aux_policy`는 frozen rule의 perturbation이며 새로 발견한 알고리즘이 아닙니다. 기존 CPU smoke/integration 검증은 구현 연결을 확인하며 기하 emergence 자체를 검증하지 않습니다.
+macOS 로컬 렌더링 검사:
 
-## 원본과 출처
+```bash
+MUJOCO_GL=glfw python -m disco_spatial doctor --environment \
+  --output runs/environment/doctor.json
+```
 
-- [DiscoRL 공식 구현](https://github.com/google-deepmind/disco_rl), [논문](https://www.nature.com/articles/s41586-025-09761-x)
-- [TripoSplat 공식 inference](https://github.com/VAST-AI-Research/TripoSplat), [논문](https://arxiv.org/abs/2605.16355), [training code](https://github.com/runjie-yan/TripoSplat-Training)
-- [고정된 upstream commit·체크섬·라이선스](third_party/PROVENANCE.json)
-- [기존 audit 원본](runs/full-experiment/audit/diagnostics.json), [학습 곡선](runs/full-experiment/study/report/learning_curves.png), [snapshot probe](runs/full-experiment/study/report/snapshot_probes.csv)
+Linux NVIDIA 서버:
 
-결과 정리와 분석 갱신: 2026-10-28. 이 문서 갱신에서 새 RL 학습이나 3D 생성은 실행하지 않았습니다.
+```bash
+bash scripts/setup_gpu.sh
+source .venv.cuda/bin/activate
+export MUJOCO_GL=egl
+export XLA_PYTHON_CLIENT_PREALLOCATE=false
+```
+
+## 개발용 실행
+
+`integration.json`은 **8 transitions만** 확인하는 연결 검증입니다. Validation이 없어 best checkpoint를 만들지 않습니다.
+
+```bash
+python -m disco_spatial train --config configs/integration.json \
+  --output runs/integration/disco-fresh
+python -m disco_spatial train --config configs/integration.json \
+  --recipe recent_replay --output runs/integration/disco-replay
+```
+
+더 긴 development run은 config를 명시합니다. 기존 디렉터리는 덮어쓰지 않습니다.
+
+```bash
+python -m disco_spatial train --config configs/development.json
+python -m disco_spatial train --config configs/replay_development.json
+```
+
+Self-imitation과 feedback teacher는 config field 또는 CLI override로 켭니다. 조건표 전체는 `scripts/expand_conditions.py`가 seed별 config로 펼칩니다.
+
+```bash
+python -m disco_spatial train --config configs/smoke.json --self-imitation-weight 0.5 \
+  --output runs/smoke/disco-sil
+python -m disco_spatial train --config configs/smoke.json --teacher outcome_memory \
+  --teacher-query counterfactual_success --distillation-weight 0.5 --output runs/smoke/disco-fd-memory
+python scripts/expand_conditions.py --stage P1_learning_gate --output runs/pilot/configs
+```
+
+실제 전체 에피소드, memory-reset intervention, teacher acting 검증:
+
+```bash
+python -m disco_spatial evaluate --checkpoint runs/development/disco-seed0/best.pkl \
+  --seeds 1000000 1000001 --output runs/evaluation/intact.json
+python -m disco_spatial evaluate --checkpoint runs/development/disco-seed0/best.pkl \
+  --seeds 1000000 1000001 --reset-memory --output runs/evaluation/reset.json
+python -m disco_spatial navigate --checkpoint runs/development/disco-seed0/best.pkl \
+  --seeds 2000000 2000001 --interventions none reset_every_step truncate_16 \
+  --output runs/navigation/disco-seed0.json
+```
+
+## Common-history ability suite
+
+같은 관측 이력에서 method별 표현을 비교합니다. 수집은 고정된 탐색형 reference policy(`--policy explore`)와 render telemetry를 사용합니다. Validation은 seed 4,000,000대, final test는 5,000,000대에서 별도로 수집합니다.
+
+```bash
+python -m disco_spatial collect --partition probe_train --seed 3000000 \
+  --episodes 4 --max-steps 1000 --output datasets/probe_train
+python -m disco_spatial extract --checkpoint runs/development/disco-seed0/best.pkl \
+  --collection datasets/probe_train --output runs/features/probe_train
+```
+
+세 partition을 같은 checkpoint로 추출한 뒤 여섯 능력군 suite를 실행합니다. 각 run의 `init.pkl`로 같은 초기화의 untrained 통제도 추출합니다.
+
+```bash
+python -m disco_spatial abilities --train runs/features/probe_train \
+  --validation runs/features/probe_validation --test runs/features/probe_final_test \
+  --output runs/abilities/disco-seed0.json
+python -m disco_spatial report --reference acaux \
+  --runs acaux:0:runs/abilities/acaux-seed0.json:runs/navigation/acaux-seed0.json \
+         disco:0:runs/abilities/disco-seed0.json:runs/navigation/disco-seed0.json \
+  --output runs/reports/pilot.json
+```
+
+Layout fingerprint는 grid 회전·반사를 동일하게 취급하며 실제 교집합이 있으면 fitting을 거부합니다. 이 검사는 probe partition 간 geometry 분리를 확인합니다. RL train geometry inventory는 아직 연결하지 않아 **RL train과 모든 probe layout의 완전 분리가 입증됐다고 주장하지 않습니다**.
+
+## 재현성과 남은 연구 작업
+
+각 run은 config, protocol hash, source hashes, 환경 버전, learner log, typed raw trajectory, checkpoint를 저장합니다. `latest.pkl`은 정책·optimizer snapshot입니다. **Simulator와 replay의 정확한 재개는 아직 지원하지 않습니다.** 복구 가능한 full-state resume을 구현하기 전에는 새 output에서 실행합니다.
+
+Confirmatory mode는 비활성입니다. 다음 순서는 GPU host의 `P1_learning_gate`(random 이상 학습, memory-reset 하락, teacher 증거) → `P2_pilot_matrix` 5 seeds → power 계획과 design lock입니다. Teacher에 GT map/pose를 제공하는 guided study는 주 실험과 분리합니다.
+
+```bash
+python -m pytest -q
+ruff check disco_spatial tests
+bash -n scripts/setup_gpu.sh
+```
+
+## 출처
+
+- [Memory Maze](https://github.com/jurgisp/memory-maze), [논문](https://arxiv.org/abs/2210.13383)
+- [DiscoRL](https://github.com/google-deepmind/disco_rl), [고정 source·checkpoint provenance](third_party/PROVENANCE.json)
+- [SDPO](https://arxiv.org/abs/2601.20802), [공식 코드](https://github.com/lasgroup/SDPO)
+
+마지막 개발 갱신: 2026-10-28.

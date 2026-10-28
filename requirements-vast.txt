@@ -1,9 +1,0 @@
-# Linux x86_64 + L40S; Python 3.12; NVIDIA driver supporting CUDA 12.6+.
-# Select a CUDA-ready Vast image. Conda is optional; venv is sufficient.
-# PyTorch CUDA 12.6 wheels are pinned so future CUDA 13 defaults cannot slip in.
---extra-index-url https://download.pytorch.org/whl/cu126
--r requirements-cuda.txt
-torch==2.6.0+cu126
-torchvision==0.21.0+cu126
-# JAX 0.4.38 needs ptxas >=12.6.85; do not silently pull a newer CUDA 12 toolkit.
-nvidia-cuda-nvcc-cu12==12.6.85

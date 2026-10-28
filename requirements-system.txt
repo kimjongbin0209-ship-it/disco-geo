@@ -1,10 +1,6 @@
-# Ubuntu apt packages (this is NOT a pip requirements file).
-# Recommended image: Linux x86_64, Ubuntu 22.04/24.04, Python 3.12,
-# NVIDIA/CUDA ready with a host driver supporting CUDA 12.6 or newer.
+# OS requirements, not a pip input. Linux GPU host: Python 3.12 + NVIDIA driver.
 git
 tmux
 rsync
-ca-certificates
 python3.12-venv
-# Python 3.12 may come from the image or optional Conda environment.yml.
-# The NVIDIA driver is managed by the Vast host, not installed in this container.
+# Headless rendering additionally needs working EGL/OpenGL driver libraries.

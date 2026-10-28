@@ -1,0 +1,38 @@
+{
+  "output": "runs/pilot/disco-fresh-seed0",
+  "purpose": "pilot",
+  "method": "disco",
+  "recipe": "fresh",
+  "maze_size": 9,
+  "camera_resolution": 64,
+  "seed": 0,
+  "steps": 5000000,
+  "num_envs": 16,
+  "rollout_length": 64,
+  "channels": [
+    32,
+    64,
+    64
+  ],
+  "feature_dim": 256,
+  "hidden_size": 256,
+  "learning_rate": 0.0003,
+  "eval_every": 500,
+  "validation_seeds": [
+    1000000,
+    1000001,
+    1000002,
+    1000003,
+    1000004,
+    1000005,
+    1000006,
+    1000007
+  ],
+  "save_trajectories": false,
+  "replay_weight": 0.2,
+  "replay_capacity_episodes": 64,
+  "replay_max_age": 20,
+  "teacher_horizon": 64,
+  "teacher_warmup_updates": 50,
+  "teacher_l2": 0.001
+}
