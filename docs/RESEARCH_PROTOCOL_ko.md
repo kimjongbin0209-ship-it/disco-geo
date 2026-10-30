@@ -1,5 +1,7 @@
 # 제한된 reward에서 공간 능력의 창발을 측정하는 연구 프로토콜
 
+[English](RESEARCH_PROTOCOL.md) | **한국어**
+
 ## 연구 질문과 주장 범위
 
 한 개의 RGB navigation task를 제한된 성공 reward로 학습한 뒤, 동결한 visual
@@ -23,7 +25,7 @@ expert action을 입력이나 loss target으로 받지 않는다. task의 성공
 
 **SDPO라는 이름을 붙인다고 teacher가 검증되는 것은 아니다.**
 [SDPO 원 논문](https://arxiv.org/abs/2601.20802)을 공간 task에 이식한 self-teacher는
-구현되어 있다([설계](SDPO_SPATIAL_RESEARCH_PLAN_KO.md)). 하지만 manifest는 `validated=false`로
+구현되어 있다([설계](SDPO_SPATIAL_RESEARCH_PLAN_ko.md)). 하지만 manifest는 `validated=false`로
 선언한다. 증류는 run마다 held-out 증거 gate를 통과한 뒤에만 적용된다. 다음을 모두 확인하기 전에는
 end-to-end SDPO 결과라고 부르지 않는다: teacher input provenance, shuffled 통제보다 나은
 정보량, 실제 행동 우위, distillation gradient, replay·self-imitation control, compute control.
@@ -250,5 +252,5 @@ collection이 실제 benchmark에 연결되어 있다. 다만 연구 규모의 c
 run별 증거 gate(G4a: shuffled 통제 대비 information gain, G4b: 인과적 teacher의 행동 검증)를
 통과할 때만 적용된다. Confirmatory 실행은 비활성이다.
 `runtime_end_to_end_verified`는 별도 검증 증거 없이 true로 바꾸지 않는다.
-이전 연구는 [독립 legacy archive 안내](LEGACY_ARCHIVE.md)에만 연결하며,
+이전 연구는 [독립 legacy archive 안내](LEGACY_ARCHIVE_ko.md)에만 연결하며,
 archive의 결과를 이 새 protocol의 실험 결과로 사용하지 않는다.

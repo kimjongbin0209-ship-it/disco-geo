@@ -16,19 +16,28 @@ import numpy as np
 from disco_spatial.evaluation.metrics import aggregate_seed_clusters
 
 
-ENDPOINTS = {
+PRIMARY = {
     "seen_hidden_target_location_rmse": "lower",
     "known_wall_balanced_iou": "higher",
     "matched_revisit_efficiency_gain": "higher",
 }
+# Secondary, descriptive G2 quantities: task return of the frozen actor, and the
+# return lost when its memory is reset every step on the same test episode.
+SECONDARY = {
+    "task_return": "higher",
+    "memory_reset_return_drop": "higher",
+}
+ENDPOINTS = {**PRIMARY, **SECONDARY}
 
 
 def parse_run(entry):
+    """label:seed:abilities.json[:navigation.json]; "-" skips the abilities file."""
     parts = entry.split(":")
     if len(parts) not in (3, 4):
         raise ValueError("Run entries are label:seed:abilities.json[:navigation.json]")
     label, seed = parts[0], int(parts[1])
-    return label, seed, Path(parts[2]), Path(parts[3]) if len(parts) == 4 else None
+    abilities = None if parts[2] == "-" else Path(parts[2])
+    return label, seed, abilities, Path(parts[3]) if len(parts) == 4 else None
 
 
 def episode_records(seed, abilities, navigation):
@@ -54,6 +63,17 @@ def episode_records(seed, abilities, navigation):
             records["matched_revisit_efficiency_gain"].append(
                 {"seed": seed, "layout_id": layout, "episode_id": episode,
                  "value": float(np.mean(values))})
+        intact = {row["seed"]: row for row in navigation["interventions"]["none"]["episodes"]}
+        for row in intact.values():
+            records["task_return"].append({"seed": seed, "layout_id": row["layout_id"],
+                                           "episode_id": row["episode_id"], "value": row["return"]})
+        reset = navigation["interventions"].get("reset_every_step")
+        for row in (reset or {}).get("episodes", []):
+            # The same environment seed gives the same maze: a paired, per-episode drop.
+            if row["seed"] in intact:
+                records["memory_reset_return_drop"].append(
+                    {"seed": seed, "layout_id": row["layout_id"], "episode_id": row["episode_id"],
+                     "value": intact[row["seed"]]["return"] - row["return"]})
     return records
 
 
@@ -76,7 +96,7 @@ def build_report(entries, reference, bootstrap_samples=2000):
         if seed in seeds[label]:
             raise ValueError(f"Duplicate training seed {seed} for {label}")
         seeds[label].add(seed)
-        abilities = json.loads(abilities_path.read_text())
+        abilities = json.loads(abilities_path.read_text()) if abilities_path else None
         navigation = json.loads(navigation_path.read_text()) if navigation_path else None
         for endpoint, rows in episode_records(seed, abilities, navigation).items():
             by_label[label][endpoint].extend(rows)
@@ -106,7 +126,8 @@ def build_report(entries, reference, bootstrap_samples=2000):
             summary[label][endpoint] = {"aggregate": aggregate, "paired_vs_reference": paired}
             interval = aggregate["hierarchical_bootstrap_ci95"]
             lines.append("| {} | {} | {:.4f} | {} | {} | {} | {} |".format(
-                label, endpoint, aggregate["mean"],
+                label, endpoint + (" (secondary)" if endpoint in SECONDARY else ""),
+                aggregate["mean"],
                 ", ".join(f"{v:.3f}" for v in aggregate["per_seed"]),
                 "-" if interval is None else f"[{interval[0]:.3f}, {interval[1]:.3f}]",
                 "-" if not paired or paired["mean_difference"] is None

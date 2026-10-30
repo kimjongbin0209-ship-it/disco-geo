@@ -14,7 +14,8 @@ import optax
 import rlax
 
 from disco_spatial import teacher as teacher_lib
-from disco_spatial.methods import masked_mean, reverse_kl_distillation, self_imitation_loss
+from disco_spatial.methods import (masked_mean, reverse_kl_distillation, reward_proximity,
+                                   self_imitation_loss)
 from disco_spatial.models import network, setting
 
 
@@ -362,6 +363,40 @@ class RecurrentAgent(official.Agent):
             final_state,
             logs,
         )
+
+    def credit_diagnostics(self, params, start_state, rollout, rule_signal, window):
+        """Sums and step counts: does an update favour actions that preceded a reward?
+
+        ``params`` are the weights after one update on the fresh ``rollout``,
+        whose behaviour logits come from the weights before it. The update's
+        effect is the change in the taken action's log-probability. The rule's
+        own signal is, for Disco, the log-probability its policy target gives
+        the taken action relative to the behaviour policy (``rule_signal`` is
+        meta_out["pi"]); for actor-critic it is the advantage (meta_out["raw_advs"]).
+        Both are split into steps followed by a reward within ``window`` steps
+        and steps that are not. Diagnostic only; nothing here trains.
+        """
+        output, _ = self.unroll_net(params, start_state, rollout)
+        actions = rollout.actions[:-1]
+        before = jax.nn.log_softmax(rollout.agent_outs["logits"][:-1])
+        after = jax.nn.log_softmax(output["logits"][:-1])
+
+        def taken(log_probabilities):
+            return jnp.take_along_axis(log_probabilities, actions[..., None], axis=-1)[..., 0]
+
+        if self.method == "disco":
+            signal = taken(jax.nn.log_softmax(rule_signal)) - taken(before)
+        else:
+            signal = rule_signal
+        gain = taken(after) - taken(before)
+        proximal, distal = reward_proximity(rollout.rewards[1:], window)
+        sums = {"update_policy_kl": jnp.mean(jnp.sum(jnp.exp(before) * (before - after), -1))}
+        for name, mask in (("proximal", proximal), ("distal", distal)):
+            weights = mask.astype(jnp.float32)
+            sums[f"{name}_steps"] = weights.sum()
+            sums[f"update_logp_gain_{name}"] = jnp.sum(gain * weights)
+            sums[f"rule_signal_{name}"] = jnp.sum(signal * weights)
+        return sums
 
     def self_imitation_objective(self, params, batch):
         """n-step positive-advantage imitation on a replayed chunk (stop-gradient V).

@@ -12,6 +12,11 @@ class TrainConfig:
     method: str = "disco"
     recipe: str = "fresh"
     purpose: str = "development"
+    # "cue_recall" is the synthetic positive control (development only), never a study task.
+    environment: str = "memory_maze"
+    control_delay: int = 0
+    control_episode_steps: int = 240
+    control_fixed_cue: int = -1  # 0..5: a one-answer bandit; -1: random cues
     maze_size: int = 9
     camera_resolution: int = 64
     seed: int = 0
@@ -25,11 +30,18 @@ class TrainConfig:
     entropy_cost: float = 0.01
     eval_every: int = 50
     validation_seeds: tuple[int, ...] = (1000000, 1000001)
+    # Greedy argmax of a near-uniform policy is a fixed-action policy; "sampled" scores the policy itself.
+    validation_policy: str = "greedy"
+    # Log whether each update raises the taken action's log-probability more on steps
+    # followed by a reward within this many steps than on steps that are not (0 = off).
+    credit_window: int = 0
     replay_weight: float = 0.2
     replay_capacity_episodes: int = 16
     replay_max_age: int = 20
     replay_max_abs_log_ratio: float = 5.0
     save_trajectories: bool = True
+    # Step each training environment in its own process (identical data, parallel stepping).
+    env_processes: bool = False
     # Positive-advantage n-step self-imitation on replayed reward-containing chunks.
     self_imitation_weight: float = 0.0
     self_imitation_max_age: int = 100
@@ -59,6 +71,8 @@ class TrainConfig:
         if self.recipe not in {"fresh", "recent_replay"}:
             raise ValueError("recipe selects the rule-loss data: fresh or recent_replay; "
                              "SDPO is configured through the teacher fields")
+        if not isinstance(self.env_processes, bool) or not isinstance(self.save_trajectories, bool):
+            raise ValueError("env_processes and save_trajectories must be booleans")
         if self.teacher not in {"none", "outcome", "outcome_memory"}:
             raise ValueError("teacher must be none, outcome, or outcome_memory")
         if self.teacher_feedback not in {"actual", "shuffled"}:
@@ -96,6 +110,22 @@ class TrainConfig:
             raise ValueError("Confirmatory training requires a locked validated protocol; not enabled")
         if self.maze_size not in {9, 11, 13, 15}:
             raise ValueError("Use an official Memory Maze size")
+        if self.environment not in {"memory_maze", "cue_recall"}:
+            raise ValueError("environment must be memory_maze or cue_recall (positive control)")
+        if self.environment == "cue_recall" and self.purpose != "development":
+            raise ValueError("The cue_recall positive control is a development diagnostic only")
+        for key in ("control_delay", "credit_window"):
+            value = getattr(self, key)
+            if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                raise ValueError(f"{key} must be a nonnegative integer")
+        if (not isinstance(self.control_episode_steps, int)
+                or self.control_episode_steps <= self.control_delay):
+            raise ValueError("control_episode_steps must exceed control_delay")
+        if (not isinstance(self.control_fixed_cue, int) or isinstance(self.control_fixed_cue, bool)
+                or not -1 <= self.control_fixed_cue <= 5):
+            raise ValueError("control_fixed_cue must be -1 (random) or an action index")
+        if self.validation_policy not in {"greedy", "sampled"}:
+            raise ValueError("validation_policy must be greedy or sampled")
         for key in ("steps", "num_envs", "rollout_length", "feature_dim", "hidden_size",
                     "eval_every", "replay_capacity_episodes"):
             value = getattr(self, key)

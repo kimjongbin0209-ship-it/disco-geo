@@ -34,6 +34,22 @@ def reverse_kl_distillation(student_logits, teacher_logits, valid, *, teacher_re
     return _masked_mean(divergence, valid)
 
 
+def reward_proximity(rewards, window):
+    """[T, B] masks: steps followed by a reward within ``window`` steps, and steps not.
+
+    ``rewards[t]`` is the reward after action t. A step is proximal when any of
+    rewards[t : t + window] is positive, distal when that whole window lies
+    inside the chunk without a reward. Windows that run past the chunk end with
+    no reward have an unknown outcome and are in neither mask.
+    """
+    t = rewards.shape[0]
+    cumulative = jnp.concatenate((jnp.zeros_like(rewards[:1]), jnp.cumsum(rewards > 0, axis=0)))
+    ends = jnp.minimum(jnp.arange(t) + window, t)
+    counts = cumulative[ends] - cumulative[:t]
+    complete = (jnp.arange(t) + window <= t)[:, None]
+    return counts > 0, (counts == 0) & complete
+
+
 def self_imitation_loss(logits, actions, returns, baseline, valid):
     """Positive-return-advantage behavior cloning; distinct from SDPO/replay RL.
 

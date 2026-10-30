@@ -1,10 +1,12 @@
 # 제한된 reward에서의 공간 능력 형성과 SDPO형 사후 피드백 증류: 연구 설계
 
+[English](SDPO_SPATIAL_RESEARCH_PLAN.md) | **한국어**
+
 ## 연구 질문
 
 **같은 제한된 reward와 상호작용 예산에서 Disco가 어떤 공간 능력을 형성하는가? 경험 재사용과 사후 피드백은 그 능력을 어떻게 바꾸는가?**
 
-TripoSplat 기반 물체 실험은 주 실험에서 제외했다([legacy archive](LEGACY_ARCHIVE.md)). 이 문서는 능력 평가 체계와 RL 학습 규칙의 개발 계획을 다룬다. 통계·split·leakage 규약은 [연구 프로토콜](RESEARCH_PROTOCOL_KO.md), 구현 세부는 [METHODS](METHODS.md)를 따른다.
+TripoSplat 기반 물체 실험은 주 실험에서 제외했다([legacy archive](LEGACY_ARCHIVE_ko.md)). 이 문서는 능력 평가 체계와 RL 학습 규칙의 개발 계획을 다룬다. 통계·split·leakage 규약은 [연구 프로토콜](RESEARCH_PROTOCOL_ko.md), 구현 세부는 [METHODS](METHODS_ko.md)를 따른다.
 
 ## 벤치마크
 
@@ -51,7 +53,7 @@ Memory Maze의 reward는 episode당 한 번의 terminal reward가 아니다. 목
 | feedback은 시도에 대한 사후 정보다 | 시도 후 H step 안에 reward가 왔는지(`outcome`, 자기 시도에 대한 hindsight) |
 | 실험은 strict on-policy | 각 최신 chunk를 outcome window가 다 관측된 직후 한 번만 쓴다(`MaturedChunks`, 나이를 기록) |
 
-Memory Maze는 reset마다 새 미로를 만든다. 따라서 "같은 task instance"는 한 episode와 한 target 색이다. 이것이 README가 지적한 logical instance와 attempt ID 문제에 대한 이번 설계다.
+Memory Maze는 reset마다 새 미로를 만든다. 따라서 "같은 task instance"는 한 episode와 한 target 색이다. 이것이 logical instance와 attempt ID 문제에 대한 이번 설계다.
 
 ### Self-teacher를 학습해야 하는 이유와 구조
 
@@ -127,9 +129,29 @@ Teacher 입력은 `own_reward_outcome_within_horizon`, `own_rgb_frame_of_previou
 5. Self-teacher 검증. Held-out 진단, shuffled 통제, gate, teacher acting — **구현. 고정 explore 정책의 offline 사전 점검에서는 정보 이득이 없었다(아래). RL 학습 중 유용성은 미검증**
 6. SDPO 계열 결합. Fresh with lookahead, replay 결합, memory 채널 — **구현, smoke 검증**
 
-다음 단계는 GPU host에서 진행한다. 우선 `P1_learning_gate`에서 두 base method가 random보다 높은 return을 내는지, memory reset 시 성능이 떨어지는지 확인한다(G2). Teacher evidence(G4a, G4b)도 이때 본다. 그다음 `P2_pilot_matrix`(5 seeds)로 효과 크기와 분산을 추정하고 power 계획을 세운다. Pilot 결과는 confirmatory로 부르지 않는다.
+`P1_learning_gate`는 2026-10-28부터 GPU 서버(Vast.ai L40S)에서 12개 run(Disco·AC+aux × fresh·teacher_only × 3 seeds)을 각 5M step 돌렸다. **G2는 통과하지 못했다.** 모든 run의 정책 엔트로피가 처음 약 0.5~1M step 안에 ln 6 ≈ 1.792, 즉 균일 정책에 도달했다. 학습 보상도 균일 정책 수준(1000-step episode당 약 0.2)에 머물렀다. 한 run은 `forward_left` 쪽으로 치우친 동안 보상률이 잠시 두 배가 됐다가 다시 균일 분포로 돌아갔다. Test return(run당 8 episode)은 random과 구분되지 않았다. Teacher의 정보 이득은 셔플 대조군과 1e-9까지 같았다. 즉 Δ head가 0에 머물렀고 G4a도 통과하지 못했다. 학습 후 frozen probe 능력은 untrained init보다 나을 게 없었고, 일부는 더 나빴다(loop closure recall 0.38 → 0.31~0.33). 모두 pilot 증거이며 결과는 `runs/pilot_results`에 있다.
+
+P2는 학습기가 실제로 학습할 때까지 미룬다. `P1d_diagnostics`는 P1이 왜 G2를 통과하지 못했는지를 세 가지로 확인한다.
+
+* **Positive control:** `cue_recall`은 cue 색이 보상받는 행동을 알려 주는 합성 과제다. 같은 step에 알려 주는 `control_reactive`와 8 step 뒤에 알려 주는 `control_memory`가 있다. cue를 고정하면 지각이 전혀 필요 없는 단일 정답 bandit(`control_bandit`)이 된다. 두 학습기가 이 과제들을 통과해야 Memory Maze 결과를 해석한다. development 용도로만 쓸 수 있고, 연구 과제로는 쓰지 않는다.
+* **Credit 진단**(`credit_window=8`): update마다 보상 직전 step과 그렇지 않은 step에서 택한 행동의 log-prob이 각각 얼마나 오르는지 비교한다. 규칙 자체의 신호도 기록한다. Disco는 target log-prob 이득, AC는 advantage다.
+* **Entropy ablation:** AC+aux를 entropy cost 0.001과 0으로 돌려 P1의 0.01과 비교한다.
+* **Disco103 learning rate:** Disco를 3e-3과 1e-2(업스트림 평가 colab의 값)로 돌려 P1의 3e-4와 비교한다. Memory Maze와 positive control 모두에서 비교한다.
+
+단계 실행 전 로컬 CPU 점검은 작은 네트워크(channels 16/32, hidden 64)와 seed 1개로 했으므로 development 증거일 뿐이다.
+
+* **Bandit:** AC+aux는 3e-4에서 약 100 update 만에 풀었다. Disco103은 3e-4에서 200 update 동안 오히려 정답에서 *멀어졌다*. 3e-3에서는 약 250 update 동안 균일 정책 정체(엔트로피 1.792)에 머문 뒤 풀었고, 1e-2에서는 약 300 update 만에 풀었다.
+* **업스트림 harness:** 수정하지 않은 업스트림 Agent도 똑같이 행동했다. 3e-4 bandit에서는 오답 행동으로 붕괴했다. 업스트림 Catch에서는 3e-4로 400 update 동안 학습이 없었고, 1e-2로는 약 300 update 뒤부터 학습했다(`scripts/upstream_disco_check.py`). 즉 공개 규칙은 이 소프트웨어 스택에서도 작동하지만, P1과 동떨어진 learning rate 영역에서만 작동한다.
+* **시각 cue 과제**(`control_reactive`, 300k step): 두 학습기 모두 풀지 못했다. AC+aux는 step당 보상 0.21~0.23에 그쳤다(chance 0.17, optimum 1). Disco는 3e-3과 1e-2에서 cue와 무관한 행동 하나로 수렴했고, encoder 특징의 cue 간 차이가 3.6에서 0.25로 붕괴했다. 초기 네트워크는 cue를 구분하므로(belief 차이 1.45), 정보는 처음부터 없던 것이 아니라 Disco 학습 중에 사라진 것이다.
+
+이에 맞춰 positive control 예산을 늘렸다(`control_reactive` 2M step). 점수가 매겨지는 행동은 바로 다음 step에 보상을 받으므로 credit window는 1로 둔다.
+
+P1의 붕괴가 그 안에 일어났으므로 step 수는 2M으로 하고, validation은 sampled로 한다. 그다음 `scripts/diagnose_stage.py`가 on-policy 학습 보상을 같은 test seed의 scripted 기준선(uniform, `forward_left`·`forward` 편향)과 비교한다. Test 평가도 32 episode 이상으로 늘리고, random 기준선과 같은 sampled 행동으로 맞춘다(`evaluate_stage.py --test-seeds 32 --policy sampled`).
 
 ```bash
+python scripts/expand_conditions.py --stage P1d_diagnostics --output runs/diagnostics/configs
+bash scripts/run_stage.sh runs/diagnostics/configs 4 8
+python scripts/diagnose_stage.py runs/diagnostics --references --parallel 8
 python scripts/expand_conditions.py --stage P1_learning_gate --output runs/pilot/configs
 python -m disco_spatial train --config runs/pilot/configs/disco-fresh-seed0.json
 python -m disco_spatial collect --partition probe_train --seed 3000000 --episodes 32 --output datasets/probe_train

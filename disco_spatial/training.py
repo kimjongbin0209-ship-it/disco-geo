@@ -89,12 +89,27 @@ class BatchedEnvironment:
     def single_action_spec(self):
         return specs.BoundedArray((), np.int32, 0, 5)
 
+    def _parallel(self, indices, command, value=None):
+        """Issue every command first when environments run in worker processes.
+
+        In-process environments are stepped one after another, as before.
+        """
+        envs = [self.envs[i] for i in indices]
+        values = [None if value is None else value[i] for i in indices]
+        if all(hasattr(env, "wait") for env in envs):
+            for env, item in zip(envs, values):
+                getattr(env, f"{command}_async")(*(() if item is None else (int(item),)))
+            return [env.wait() for env in envs]
+        return [getattr(env, command)(*(() if item is None else (int(item),)))
+                for env, item in zip(envs, values)]
+
     def reset_finished(self):
-        for i, env in enumerate(self.envs):
-            if self.timesteps[i] is None or self.timesteps[i].last():
-                self.timesteps[i] = env.reset()
-                self.records[i] = EpisodeRecord(env, self.timesteps[i], self.method)
-                self.previous_actions[i], self.previous_rewards[i] = 6, 0
+        finished = [i for i, ts in enumerate(self.timesteps) if ts is None or ts.last()]
+        timesteps = self._parallel(finished, "reset")
+        for i, timestep in zip(finished, timesteps):
+            self.timesteps[i] = timestep
+            self.records[i] = EpisodeRecord(self.envs[i], timestep, self.method)
+            self.previous_actions[i], self.previous_rewards[i] = 6, 0
 
     def timestep(self):
         return dm_env.TimeStep(
@@ -104,16 +119,19 @@ class BatchedEnvironment:
                                   for ts in self.timesteps]),
             observation={
                 "rgb": jnp.asarray(np.stack([ts.observation["rgb"] for ts in self.timesteps])),
-                "previous_action": jnp.asarray(self.previous_actions),
-                "previous_reward": jnp.asarray(self.previous_rewards),
+                # Copies: on CPU jnp.asarray may alias a numpy buffer, and step() mutates
+                # these in place, which would rewrite every stored rollout observation.
+                "previous_action": jnp.asarray(self.previous_actions.copy()),
+                "previous_reward": jnp.asarray(self.previous_rewards.copy()),
             },
         )
 
     def step(self, actions, logits, version):
-        for i, env in enumerate(self.envs):
-            if self.timesteps[i].last():
-                raise RuntimeError("Reset transitions cannot enter a learner rollout")
-            next_ts = env.step(int(actions[i]))
+        if any(timestep.last() for timestep in self.timesteps):
+            raise RuntimeError("Reset transitions cannot enter a learner rollout")
+        indices = range(len(self.envs))
+        timesteps = self._parallel(indices, "step", np.asarray(actions))
+        for i, next_ts in zip(indices, timesteps):
             self.records[i].append(actions[i], logits[i], version, next_ts)
             self.timesteps[i] = next_ts
             self.previous_actions[i] = actions[i]
@@ -179,13 +197,24 @@ def reconstruct_prefix_state(agent, params, trajectory, stop):
     The raw prefix is unrolled in a few fixed block sizes so compilation is
     bounded while the recurrence is identical to step-by-step processing.
     """
-    if not 0 <= stop <= trajectory.n_steps:
+    return reconstruct_prefix_states(agent, params, [trajectory], stop)
+
+
+def reconstruct_prefix_states(agent, params, trajectories, stop):
+    """Batched prefix states for episodes that share the same prefix length.
+
+    Synchronous collectors keep every environment at the same episode step,
+    so all their prefixes can be unrolled together on the batch axis.
+    """
+    if any(not 0 <= stop <= trajectory.n_steps for trajectory in trajectories):
         raise ValueError("Prefix end is outside the episode")
-    state = agent.initial_actor_state(jax.random.PRNGKey(0), batch_size=1)
-    observations, t = _observation_arrays(trajectory), 0
+    state = agent.initial_actor_state(jax.random.PRNGKey(0), batch_size=len(trajectories))
+    arrays = [_observation_arrays(trajectory) for trajectory in trajectories]
+    t = 0
     for block in PREFIX_BLOCKS:
         while stop - t >= block:
-            part = {key: jnp.asarray(value[t:t + block]) for key, value in observations.items()}
+            part = {key: jnp.asarray(np.concatenate([a[key][t:t + block] for a in arrays], axis=1))
+                    for key in arrays[0]}
             state = _prefix_unroll(agent, params, state, part)
             t += block
     return state
@@ -193,27 +222,39 @@ def reconstruct_prefix_state(agent, params, trajectory, stop):
 
 def replay_rollout(agent, params, chunk):
     """Recompute current state/outputs; keep immutable actual behavior logits."""
-    trajectory = chunk.trajectory
-    observations = trajectory_observations(trajectory)
-    state = reconstruct_prefix_state(agent, params, trajectory, chunk.start)
-    selected = jax.tree.map(lambda x: x[chunk.start:chunk.stop + 1], observations)
+    return replay_rollouts(agent, params, [chunk])
+
+
+def replay_rollouts(agent, params, chunks):
+    """Batched replay rollouts for chunks that share start and stop.
+
+    Prefix states and current outputs are computed in one call on the batch
+    axis. Only each chunk's own slice of observations is transferred.
+    """
+    s, e = chunks[0].start, chunks[0].stop
+    if any((chunk.start, chunk.stop) != (s, e) for chunk in chunks):
+        raise ValueError("Batched replay chunks must share start and stop")
+    state = reconstruct_prefix_states(agent, params, [c.trajectory for c in chunks], s)
+    arrays = [_observation_arrays(chunk.trajectory) for chunk in chunks]
+    selected = {key: jnp.asarray(np.concatenate([a[key][s:e + 1] for a in arrays], axis=1))
+                for key in arrays[0]}
     current, _ = agent.policy_network.unroll(params, state, selected, selected["is_first"])
-    behavior = jnp.asarray(chunk.behavior_logits[:, None])
+    behavior = jnp.asarray(np.stack([chunk.behavior_logits for chunk in chunks], axis=1))
     old_logits = jnp.concatenate((behavior, current["logits"][-1:]), axis=0)
     behavior_out = dict(current, logits=old_logits)
-    s, e = chunk.start, chunk.stop
-    incoming_reward = np.r_[0., trajectory.rewards][s:e + 1]
-    incoming_discount = np.r_[1., trajectory.discounts][s:e + 1]
+    incoming_reward = np.stack([np.r_[0., c.trajectory.rewards][s:e + 1] for c in chunks], 1)
+    incoming_discount = np.stack([np.r_[1., c.trajectory.discounts][s:e + 1] for c in chunks], 1)
+    actions = np.stack([np.r_[chunk.actions, 0] for chunk in chunks], axis=1)
     rollout = types.ActorRollout(
         observations=selected,
-        actions=jnp.asarray(np.r_[chunk.actions, 0][:, None], jnp.int32),
-        rewards=jnp.asarray(incoming_reward[:, None], jnp.float32),
-        discounts=jnp.asarray(incoming_discount[:, None], jnp.float32),
+        actions=jnp.asarray(actions, jnp.int32),
+        rewards=jnp.asarray(incoming_reward, jnp.float32),
+        discounts=jnp.asarray(incoming_discount, jnp.float32),
         agent_outs=behavior_out, logits=old_logits, states={},
     )
     log_pi = jax.nn.log_softmax(current["logits"][:-1], axis=-1)
     log_mu = jax.nn.log_softmax(behavior, axis=-1)
-    action = jnp.asarray(chunk.actions[:, None, None])
+    action = jnp.asarray(actions[:-1, :, None])
     log_ratio = jnp.take_along_axis(log_pi - log_mu, action, axis=-1)[..., 0]
     # Clipping is for finite diagnostic reporting only. Eligibility below skips
     # excessive drift; the released learner still receives actual behavior logits.
@@ -222,7 +263,7 @@ def replay_rollout(agent, params, chunk):
         "replay_rho_mean": float(ratio.mean()), "replay_rho_max": float(ratio.max()),
         "replay_current_behavior_kl": float((jnp.exp(log_pi) * (log_pi - log_mu)).sum(-1).mean()),
         "replay_effective_sample_size": float(ratio.sum() ** 2 / jnp.maximum((ratio**2).sum(), 1e-8)),
-        "replay_prefix_steps": chunk.start,
+        "replay_prefix_steps": s,
         "replay_abs_log_ratio_max": float(jnp.max(jnp.abs(log_ratio))),
         "replay_rho_reporting_clipped": bool(jnp.any(jnp.abs(log_ratio) > 20)),
     }
@@ -282,16 +323,22 @@ def feedback_batch(agent, params, items, config, rng):
     from disco_spatial import feedback as fb
     from disco_spatial.replay import ReplayChunk
 
-    parts, feedbacks, behavior = [], [], []
+    # Lockstep environments mature chunks at the same start: rebuild them together.
+    order = sorted(range(len(items)), key=lambda i: items[i][1])
+    items = [items[i] for i in order]
+    groups = {}
+    for trajectory, start in items:
+        groups.setdefault(start, []).append(
+            ReplayChunk(trajectory, start, start + config.rollout_length, 0))
+    parts = [replay_rollouts(agent, params, chunks)[:2] for chunks in groups.values()]
+    rollout, state = parts[0] if len(parts) == 1 else stack_rollouts(parts)
+    feedbacks, behavior = [], []
     for trajectory, start in items:
         stop = start + config.rollout_length
-        rollout, state, _ = replay_rollout(agent, params, ReplayChunk(trajectory, start, stop, 0))
-        parts.append((rollout, state))
         behavior.append(trajectory.behavior_logits[start:stop])
         feedbacks.append(fb.chunk_feedback(
             trajectory, start, stop, config.teacher_horizon,
             memory="success_memory" in agent.teacher_channels))
-    rollout, state = stack_rollouts(parts)
     actual = fb.stack_feedback(feedbacks)
     train_inputs = fb.shuffled(actual, rng) if config.teacher_feedback == "shuffled" else actual
 
@@ -386,33 +433,68 @@ class TeacherGate:
                     self.weights["teacher_information_gain_success"]}
 
 
-def evaluate(agent, params, config, seeds=None, reset_memory=False, teacher_head=None):
+def environment_factory(config):
+    """The configured task: real Memory Maze, or the development-only positive control."""
+    if config.environment == "cue_recall":
+        from disco_spatial.envs.control import make_cue_recall
+
+        return partial(make_cue_recall, delay=config.control_delay,
+                       episode_steps=config.control_episode_steps,
+                       fixed_cue=config.control_fixed_cue)
+    return make_memory_maze
+
+
+def evaluate(agent, params, config, seeds=None, reset_memory=False, teacher_head=None,
+             env_factory=None):
     """Whole official episodes with no evaluation sidecars.
 
     With ``teacher_head`` the teacher acts: student logits plus delta with the
     constant query outcome=1 and causal success memory from the episode itself.
     This is valid only because that query uses no hindsight information.
+    ``config.validation_policy`` chooses greedy or sampled actions (seeded per episode).
     """
     from disco_spatial.evaluation.navigation import run_episode
 
     seeds = tuple(config.validation_seeds if seeds is None else seeds)
+    make_env = env_factory or environment_factory(config)
+    greedy = config.validation_policy == "greedy"
     returns, lengths = [], []
     started = time.monotonic()
     for seed in seeds:
-        env = make_memory_maze(config.maze_size, seed, "validation", config.camera_resolution)
+        env = make_env(config.maze_size, seed, "validation", config.camera_resolution)
         try:
             actor = None if teacher_head is None else teacher_actor(agent, params, teacher_head)
-            episode = run_episode(agent, params, env, actor=actor,
+            episode = run_episode(agent, params, env, actor=actor, greedy=greedy,
+                                  rng=np.random.default_rng(seed),
                                   intervention="reset_every_step" if reset_memory else "none")
         finally:
             env.close()
         returns.append(float(episode["rewards"].sum()))
         lengths.append(int(len(episode["rewards"])))
+    policy = config.validation_policy
     return {"seeds": list(seeds), "returns": returns, "lengths": lengths,
             "mean_return": float(np.mean(returns)) if returns else None,
             "wall_seconds": time.monotonic() - started, "memory_reset": reset_memory,
-            "policy": "greedy_teacher_success_query" if teacher_head is not None else "greedy",
+            "policy": f"{policy}_teacher_success_query" if teacher_head is not None else policy,
             "sidecar_used": False}
+
+
+RULE_LOGS = ("entropy", "pi_hat_entropy", "pi_loss", "raw_advs", "avg_value", "agent_q_mean",
+             "q_loss")
+
+
+def credit_record(sums, window, method):
+    """Per-update credit diagnostics as means beside their step counts (None when empty)."""
+    sums = {key: float(value) for key, value in sums.items()}
+    record = {"credit_window": window,
+              "credit_rule_signal": "target_logp_gain" if method == "disco" else "advantage",
+              "update_policy_kl": sums["update_policy_kl"]}
+    for name in ("proximal", "distal"):
+        steps = sums[f"{name}_steps"]
+        record[f"credit_{name}_steps"] = int(steps)
+        for key in ("update_logp_gain", "rule_signal"):
+            record[f"credit_{key}_{name}"] = sums[f"{key}_{name}"] / steps if steps else None
+    return record
 
 
 def teacher_actor(agent, params, head):
@@ -445,7 +527,7 @@ def teacher_actor(agent, params, head):
     return act
 
 
-def train(config, env_factory=make_memory_maze):
+def train(config, env_factory=None):
     from disco_spatial import teacher as teacher_lib
 
     output = Path(config.output)
@@ -454,8 +536,14 @@ def train(config, env_factory=make_memory_maze):
     output.mkdir(parents=True, exist_ok=True)
     write_json(output / "config.json", config.to_dict())
     write_json(output / "protocol.json", build_manifest(config.to_dict()))
+    env_factory = env_factory or environment_factory(config)
+    make_env = env_factory
+    if config.env_processes:
+        from disco_spatial.envs.workers import ProcessEnvironment
+
+        make_env = partial(ProcessEnvironment, env_factory)
     batch = BatchedEnvironment([
-        env_factory(config.maze_size, config.seed * 1000 + worker,
+        make_env(config.maze_size, config.seed * 1000 + worker,
                     "train", config.camera_resolution)
         for worker in range(config.num_envs)
     ], config.method)
@@ -474,6 +562,7 @@ def train(config, env_factory=make_memory_maze):
     update = jax.jit(agent.learner_step_targets)
     mixed = jax.jit(agent.learner_step_mixed, static_argnames=("replay_weight",))
     composite = jax.jit(agent.learner_step_composite, static_argnames=("replay_weight",))
+    credit = jax.jit(partial(agent.credit_diagnostics, window=config.credit_window))
     transitions, updates, best = 0, 0, -float("inf")
     forward_steps, distilled_updates = 0, 0
     started = time.monotonic()
@@ -529,6 +618,8 @@ def train(config, env_factory=make_memory_maze):
                 fresh, state, start_state, key, count = collect_rollout(
                     agent, learner.params, state, batch, key, length, updates, actor_step)
                 chunk_length = count // config.num_envs
+                # One immutable copy per episode and update, shared by every consumer below.
+                snapshots = [record.trajectory() for record in batch.records]
                 forward_steps += 2 * (chunk_length + 1) * config.num_envs
                 diagnostics = {"replay_used": False}
                 old, old_state = None, None
@@ -556,12 +647,20 @@ def train(config, env_factory=make_memory_maze):
                 key, update_key = jax.random.split(key)
                 if agent.method == "disco":
                     ema_params = learner.meta_state["target_params"]
-                    target_states = [reconstruct_prefix_state(
-                        agent, ema_params, record.trajectory(),
-                        len(record.actions) - chunk_length) for record in batch.records]
-                    forward_steps += sum(len(r.actions) - chunk_length for r in batch.records)
+                    stops = [t.n_steps - chunk_length for t in snapshots]
+                    groups = {}
+                    for index, stop in enumerate(stops):
+                        groups.setdefault(stop, []).append(index)
+                    parts = [None] * len(stops)
+                    for stop, indices in groups.items():
+                        states = reconstruct_prefix_states(
+                            agent, ema_params, [snapshots[i] for i in indices], stop)
+                        for position, index in enumerate(indices):
+                            parts[index] = jax.tree.map(
+                                lambda x, p=position: x[p:p + 1], states)
+                    forward_steps += sum(stops)
                     target_start = jax.tree.map(
-                        lambda *parts: jnp.concatenate(parts, axis=0), *target_states)
+                        lambda *xs: jnp.concatenate(xs, axis=0), *parts)
                     replay_target_start = None
                     if old is not None:
                         replay_target_start = reconstruct_prefix_state(
@@ -622,11 +721,8 @@ def train(config, env_factory=make_memory_maze):
                 loss = float(metrics["total_loss"])
                 if not np.isfinite(loss):
                     raise FloatingPointError("Nonfinite learner loss")
-                snapshots = []
-                for record, ts in zip(batch.records, batch.timesteps):
-                    snapshot = record.trajectory()
+                for record, ts, snapshot in zip(batch.records, batch.timesteps, snapshots):
                     replay.add(snapshot)
-                    snapshots.append(snapshot)
                     if ts.last():
                         save_record(record)
                 if teacher_on:
@@ -646,6 +742,13 @@ def train(config, env_factory=make_memory_maze):
                              "rule_gradient_norm", "auxiliary_gradient_norm"):
                     if name in metrics:
                         record[name] = float(metrics[name])
+                if config.credit_window:
+                    # Diagnostic forward pass only; not counted in learner_network_steps.
+                    signal = metrics["meta_out"]["pi" if agent.method == "disco" else "raw_advs"]
+                    record.update(credit_record(credit(learner.params, start_state, fresh, signal),
+                                                config.credit_window, agent.method))
+                    record.update({f"rule_{name}": float(metrics[name])
+                                   for name in RULE_LOGS if name in metrics})
                 if feedback is not None:
                     record.update({name: float(value) for name, value in metrics.items()
                                    if name.startswith(("teacher_", "distill"))})
@@ -657,11 +760,12 @@ def train(config, env_factory=make_memory_maze):
                     record["matured_chunks_dropped"] = matured.dropped
                 due = updates % config.eval_every == 0 or transitions >= config.steps
                 if due and config.validation_seeds:
-                    validation = evaluate(agent, learner.params, config)
+                    validation = evaluate(agent, learner.params, config, env_factory=env_factory)
                     record["validation"] = validation
                     if teacher_on:
                         record["teacher_validation"] = evaluate(
-                            agent, learner.params, config, teacher_head=teacher_ema)
+                            agent, learner.params, config, teacher_head=teacher_ema,
+                            env_factory=env_factory)
                     if validation["mean_return"] > best:
                         best = validation["mean_return"]
                         checkpoint("best.pkl")
