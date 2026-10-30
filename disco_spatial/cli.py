@@ -54,6 +54,14 @@ def parser():
     q.add_argument("--teacher", action="store_true")
     q.add_argument("--max-steps", type=int)
     q.add_argument("--output", required=True)
+    q = commands.add_parser("scripted", help="Fixed reactive reference policy (uniform or an "
+                                             "action bias): return that needs no learning")
+    q.add_argument("--policy", default="uniform", help="'uniform' or '<action>:<probability>'")
+    q.add_argument("--seeds", nargs="+", type=int, required=True)
+    q.add_argument("--maze-size", type=int, default=9)
+    q.add_argument("--resolution", type=int, default=64)
+    q.add_argument("--max-steps", type=int)
+    q.add_argument("--output", required=True)
     q = commands.add_parser("collect", help="Reference-policy common histories with render telemetry")
     q.add_argument("--output", required=True)
     q.add_argument("--partition", choices=("probe_train", "probe_validation", "probe_final_test"),
@@ -234,6 +242,20 @@ def main(argv=None):
         result.update(checkpoint=options["checkpoint"], training_seed=config.seed,
                       method=config.method, teacher_acting=options["teacher"])
         write_json(options["output"], result)
+    elif command == "scripted":
+        from disco_spatial.envs.memory_maze import make_memory_maze
+        from disco_spatial.evaluation.scripted import scripted_returns
+        from disco_spatial.io import write_json
+
+        if any(not 2000000 <= seed < 3000000 for seed in options["seeds"]):
+            raise ValueError("Reference policies use the policy-final-test seed namespace")
+        if Path(options["output"]).exists():
+            raise FileExistsError("Use a new reference-policy output")
+        result = scripted_returns(make_memory_maze, options["seeds"], options["policy"],
+                                  maze_size=options["maze_size"], resolution=options["resolution"],
+                                  max_steps=options["max_steps"])
+        write_json(options["output"], result)
+        result = {key: result[key] for key in ("policy", "reward_per_1000_steps", "mean_return")}
     elif command == "collect":
         from disco_spatial.artifacts import collect_common_history
 

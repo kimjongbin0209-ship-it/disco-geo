@@ -3,8 +3,6 @@
 from dataclasses import replace
 import json
 
-import dm_env
-from dm_env import specs
 import jax
 import numpy as np
 import pytest
@@ -13,46 +11,7 @@ from disco_spatial.agents import RecurrentAgent
 from disco_spatial.config import TrainConfig
 from disco_spatial.replay import ReplayChunk
 from disco_spatial.training import BatchedEnvironment, collect_rollout, replay_rollout, train
-
-
-class ShortTask:
-    """Unit-test-only sequence with a genuine time-limit continuation discount."""
-
-    def __init__(self, size=9, seed=0, split="train", resolution=64):
-        self.size, self.seed, self.split, self.resolution = size, seed, split, resolution
-        self.metadata = {"environment": "unit_test_only", "seed": seed}
-        self.episode_index, self.goal_segment, self.position = -1, 0, 0
-        self.closed = False
-
-    def observation_spec(self):
-        return {"rgb": specs.Array((self.resolution, self.resolution, 3), np.uint8)}
-
-    def action_spec(self):
-        return specs.BoundedArray((), np.int32, 0, 5)
-
-    def image(self):
-        pixels = np.full((self.resolution, self.resolution, 3), self.position * 20, np.uint8)
-        pixels[:, self.position % self.resolution, 0] = 200
-        return {"rgb": pixels}
-
-    def reset(self):
-        self.episode_index += 1
-        self.episode_id = f"train:{self.seed}:{self.episode_index}"
-        self.instance_id = f"{self.seed}:{self.episode_index}"
-        self.position, self.goal_segment = 0, 0
-        return dm_env.restart(self.image())
-
-    def step(self, action):
-        assert self.position < 3
-        self.position += 1
-        reward = float(self.position == 2)
-        self.goal_segment += int(reward)
-        if self.position == 3:
-            return dm_env.truncation(reward, self.image(), discount=1.)
-        return dm_env.transition(reward, self.image(), discount=1.)
-
-    def close(self):
-        self.closed = True
+from fake_env import ShortTask
 
 
 def small_config(tmp_path, **changes):
@@ -240,3 +199,115 @@ def test_teacher_configuration_is_explicit():
     with pytest.raises(ValueError, match="teacher_l2"):
         TrainConfig(teacher="outcome", teacher_l2=-0.1)
     assert TrainConfig(teacher="outcome", teacher_hidden=0, teacher_l2=0.01).teacher_hidden == 0
+
+
+def test_process_workers_match_in_process_environments_and_report_failures():
+    from disco_spatial.envs.workers import ProcessEnvironment
+    from fake_env import BrokenTask
+
+    local, remote = ShortTask(seed=5), ProcessEnvironment(ShortTask, 9, 5, "train", 64)
+    try:
+        assert remote.metadata == local.metadata and remote.split == "train"
+        np.testing.assert_array_equal(remote.reset().observation["rgb"],
+                                      local.reset().observation["rgb"])
+        for action in (1, 2, 3):
+            expected, actual = local.step(action), remote.step(action)
+            assert (actual.step_type, actual.reward, actual.discount) == (
+                expected.step_type, expected.reward, expected.discount)
+            np.testing.assert_array_equal(actual.observation["rgb"], expected.observation["rgb"])
+        assert remote.episode_id == local.episode_id and remote.goal_segment == 1
+        remote.step_async(0)  # ShortTask asserts after its last step: the worker fails
+        with pytest.raises(RuntimeError, match="AssertionError"):
+            remote.wait()
+    finally:
+        remote.close()
+    with pytest.raises(RuntimeError, match="deliberately broken"):
+        ProcessEnvironment(BrokenTask, 9, 0, "train", 64)
+
+
+def test_training_with_worker_processes_is_identical_to_in_process(tmp_path):
+    rows = {}
+    for processes in (False, True):
+        config = small_config(tmp_path / str(processes), num_envs=2, steps=12,
+                              recipe="recent_replay", env_processes=processes)
+        train(config, env_factory=ShortTask)
+        rows[processes] = [json.loads(row) for row in
+                           (tmp_path / str(processes) / "run/metrics.jsonl").read_text().splitlines()]
+    for left, right in zip(rows[False], rows[True]):
+        for key in ("transitions", "loss", "action_counts", "reward_events_this_chunk",
+                    "replay_used"):
+            assert left[key] == right[key], key
+
+
+def test_batched_prefix_states_equal_individual_reconstruction(tmp_path):
+    from disco_spatial.trajectory import Trajectory
+    from disco_spatial.training import reconstruct_prefix_state, reconstruct_prefix_states
+
+    config = small_config(tmp_path)
+    agent = RecurrentAgent(config, BatchedEnvironment([ShortTask()], config.method))
+    params = agent.initial_learner_state(jax.random.PRNGKey(1)).params
+    rng = np.random.default_rng(3)
+
+    def episode(n=40):
+        types = np.ones(n + 1, np.int8)
+        types[0] = 0
+        return Trajectory(
+            episode_id=f"train:{rng.integers(1 << 30)}", instance_id="p", split="train",
+            rgb=rng.integers(0, 256, (n + 1, 64, 64, 3), dtype=np.uint8),
+            actions=rng.integers(0, 6, n).astype(np.int32), rewards=np.zeros(n, np.float32),
+            discounts=np.ones(n, np.float32), behavior_logits=np.zeros((n, 6), np.float32),
+            policy_versions=np.zeros(n, np.int64), step_types=types,
+            goal_segments=np.zeros(n + 1, np.int32), terminated=np.zeros(n, bool),
+            truncated=np.zeros(n, bool), metadata={})
+
+    episodes = [episode(), episode(), episode()]
+    batched = reconstruct_prefix_states(agent, params, episodes, 37)
+    for index, trajectory in enumerate(episodes):
+        single = reconstruct_prefix_state(agent, params, trajectory, 37)
+        for a, b in zip(jax.tree.leaves(batched), jax.tree.leaves(single)):
+            np.testing.assert_allclose(a[index:index + 1], b, atol=2e-5)
+
+
+def test_disco_with_several_environments_trains_end_to_end(tmp_path):
+    config = small_config(tmp_path, method="disco", num_envs=2, steps=12)
+    result = train(config, env_factory=ShortTask)
+    assert result["transitions"] == 12 and result["learner_network_steps"] > 0
+
+
+def test_batched_replay_rollouts_equal_individual_chunks(tmp_path):
+    from disco_spatial.training import replay_rollouts
+
+    config = small_config(tmp_path, num_envs=2)
+    envs = BatchedEnvironment([ShortTask(seed=1), ShortTask(seed=2)], config.method)
+    agent = RecurrentAgent(config, envs)
+    key = jax.random.PRNGKey(0)
+    learner = agent.initial_learner_state(key)
+    state = agent.initial_actor_state(key)
+    collect_rollout(agent, learner.params, state, envs, key, 3, 0)
+    chunks = [ReplayChunk(record.trajectory(), 1, 3, 0) for record in envs.records]
+    batched, batched_state, _ = replay_rollouts(agent, learner.params, chunks)
+    for index, chunk in enumerate(chunks):
+        single, single_state, _ = replay_rollout(agent, learner.params, chunk)
+        for a, b in zip(jax.tree.leaves(batched), jax.tree.leaves(single)):
+            np.testing.assert_allclose(np.asarray(a)[:, index:index + 1], b, atol=2e-5)
+        for a, b in zip(jax.tree.leaves(batched_state), jax.tree.leaves(single_state)):
+            np.testing.assert_allclose(np.asarray(a)[index:index + 1], b, atol=2e-5)
+    with pytest.raises(ValueError, match="share start"):
+        replay_rollouts(agent, learner.params, [chunks[0], ReplayChunk(chunks[1].trajectory, 0, 2, 0)])
+
+
+def test_rollout_keeps_each_steps_previous_action_and_reward(tmp_path):
+    from disco_spatial.envs.control import CueRecall
+
+    config = small_config(tmp_path, num_envs=2)
+    env = BatchedEnvironment([CueRecall(seed=1), CueRecall(seed=2)], config.method)
+    agent = RecurrentAgent(config, env)
+    key = jax.random.PRNGKey(0)
+    learner = agent.initial_learner_state(key)
+    state = agent.initial_actor_state(key)
+    rollout = collect_rollout(agent, learner.params, state, env, key, 6, 0)[0]
+    observations = rollout.observations
+    # Later environment steps must not rewrite earlier observations (CPU buffer aliasing).
+    np.testing.assert_array_equal(observations["previous_action"][0], [6, 6])
+    np.testing.assert_array_equal(observations["previous_action"][1:], rollout.actions[:-1])
+    np.testing.assert_array_equal(observations["previous_reward"][1:], rollout.rewards[1:])

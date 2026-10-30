@@ -26,11 +26,15 @@ MEMORY_ELAPSED_SCALE = 1000.0
 
 
 def border_color_keys(rgb):
-    """Integer key for the requested target color, from the RGB border only."""
+    """Integer key for the requested target color, from the RGB border only.
+
+    The border is one uniform color, so a sparse sample of both side borders
+    (every fourth row) gives the same median at a fraction of the cost.
+    """
     rgb = np.asarray(rgb)
     width = max(1, border_width(rgb.shape[1]))
-    border = np.concatenate((rgb[:, :width].reshape(len(rgb), -1, 3),
-                             rgb[:, -width:].reshape(len(rgb), -1, 3)), axis=1)
+    border = np.concatenate((rgb[:, ::4, :width].reshape(len(rgb), -1, 3),
+                             rgb[:, ::4, -width:].reshape(len(rgb), -1, 3)), axis=1)
     quantized = np.round(np.median(border, axis=1) / 16).astype(np.int64)
     return quantized[:, 0] * 10000 + quantized[:, 1] * 100 + quantized[:, 2]
 
@@ -46,16 +50,15 @@ def outcome_labels(rewards, horizon, complete):
     """
     rewards = np.asarray(rewards)
     steps = len(rewards)
-    success = np.zeros(steps, bool)
-    distance = np.full(steps, horizon + 1, np.int32)
-    censored = np.zeros(steps, bool)
     reward_times = np.flatnonzero(rewards == 1)
-    for t in range(steps):
-        later = reward_times[(reward_times >= t) & (reward_times < t + horizon)]
-        if later.size:
-            success[t], distance[t] = True, int(later[0] - t + 1)
-        elif not complete and t + horizon > steps:
-            censored[t] = True
+    t = np.arange(steps)
+    following = np.searchsorted(reward_times, t)  # first reward at or after t
+    has_reward = following < len(reward_times)
+    first = np.where(has_reward, reward_times[np.minimum(following, len(reward_times) - 1)]
+                     if len(reward_times) else 0, steps + horizon)
+    success = has_reward & (first < t + horizon)
+    distance = np.where(success, first - t + 1, horizon + 1).astype(np.int32)
+    censored = ~success & (not complete) & (t + horizon > steps)
     return success, distance, censored
 
 

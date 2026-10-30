@@ -34,5 +34,6 @@
   "replay_max_age": 20,
   "teacher_horizon": 64,
   "teacher_warmup_updates": 50,
-  "teacher_l2": 0.001
+  "teacher_l2": 0.001,
+  "env_processes": true
 }

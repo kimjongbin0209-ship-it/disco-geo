@@ -192,8 +192,13 @@ def test_report_pairs_training_seeds_and_reduces_revisit_pairs_per_episode(tmp_p
             "map_topology": {"belief": {"episodes": [
                 {"layout_id": f"L{i}", "episode_id": f"e{i}", "known_balanced_iou": iou}
                 for i in range(2)]}}}}
-        navigation = {"interventions": {"none": {"pairs": [
-            {"layout_id": "L0", "episode_id": "e0", "efficiency_gain": g} for g in gains]}}}
+        episodes = [{"seed": 2000000 + i, "layout_id": f"L{i}", "episode_id": f"e{i}",
+                     "return": 3.0 + i} for i in range(2)]
+        navigation = {"interventions": {
+            "none": {"pairs": [{"layout_id": "L0", "episode_id": "e0", "efficiency_gain": g}
+                               for g in gains], "episodes": episodes},
+            "reset_every_step": {"pairs": [], "episodes": [dict(row, **{"return": 1.0})
+                                                           for row in episodes]}}}
         a, n = tmp_path / f"{name}{seed}a.json", tmp_path / f"{name}{seed}n.json"
         a.write_text(json.dumps(abilities))
         n.write_text(json.dumps(navigation))
@@ -208,5 +213,11 @@ def test_report_pairs_training_seeds_and_reduces_revisit_pairs_per_episode(tmp_p
     assert revisit["aggregate"]["n_episode_records"] == 2  # two pairs -> one episode value
     assert revisit["aggregate"]["mean"] == pytest.approx(0.3)
     assert report["status"] == "pilot_descriptive_not_confirmatory"
+    drop = report["conditions"]["disco"]["memory_reset_return_drop"]["aggregate"]
+    assert drop["mean"] == pytest.approx(2.5)  # (3-1 + 4-1) / 2 per seed, paired by env seed
+    assert "task_return (secondary)" in report["markdown"]
+    navigation_only = build_report([f"random:0:-:{runs[0].split(':')[3]}"] + runs, "ac",
+                                   bootstrap_samples=10)
+    assert "seen_hidden_target_location_rmse" not in navigation_only["conditions"]["random"]
     with pytest.raises(ValueError, match="Duplicate"):
         build_report(runs + [runs[0]], "ac")

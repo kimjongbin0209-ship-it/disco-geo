@@ -83,3 +83,31 @@ def test_chunk_feedback_and_shuffle_keep_step_masks_and_returns():
     np.testing.assert_array_equal(mixed.returns, batch.returns)
     assert sorted(mixed.outcome[:-1].ravel()) == sorted(batch.outcome[:-1].ravel())
     np.testing.assert_array_equal(mixed.outcome[-1], batch.outcome[-1])
+
+
+def reference_outcome_labels(rewards, horizon, complete):
+    """The original per-step loop, kept as the specification for the vectorized code."""
+    rewards = np.asarray(rewards)
+    steps = len(rewards)
+    success = np.zeros(steps, bool)
+    distance = np.full(steps, horizon + 1, np.int32)
+    censored = np.zeros(steps, bool)
+    reward_times = np.flatnonzero(rewards == 1)
+    for t in range(steps):
+        later = reward_times[(reward_times >= t) & (reward_times < t + horizon)]
+        if later.size:
+            success[t], distance[t] = True, int(later[0] - t + 1)
+        elif not complete and t + horizon > steps:
+            censored[t] = True
+    return success, distance, censored
+
+
+def test_vectorized_outcome_labels_match_the_reference_loop():
+    rng = np.random.default_rng(0)
+    for trial in range(200):
+        steps = int(rng.integers(0, 120))
+        rewards = (rng.random(steps) < rng.choice([0.0, 0.02, 0.2])).astype(np.float32)
+        horizon, complete = int(rng.integers(1, 40)), bool(rng.integers(2))
+        for actual, expected in zip(fb.outcome_labels(rewards, horizon, complete),
+                                    reference_outcome_labels(rewards, horizon, complete)):
+            np.testing.assert_array_equal(actual, expected)

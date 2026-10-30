@@ -56,6 +56,97 @@
       "axis": "teacher_validation",
       "overrides": {"teacher": "outcome_memory", "teacher_gate": "never"},
       "learning_signal": "teacher trained and validated, never distilled (student equals fresh)"
+    },
+    {
+      "id": "diag_fresh",
+      "diagnostic_only": true,
+      "axis": "diagnostic",
+      "overrides": {},
+      "learning_signal": "released rule on fresh rollouts; the stage adds credit diagnostics"
+    },
+    {
+      "id": "diag_entropy_1e-3",
+      "diagnostic_only": true,
+      "axis": "diagnostic_entropy",
+      "methods": ["actor_critic_aux"],
+      "overrides": {"entropy_cost": 0.001},
+      "learning_signal": "AC+aux with a 10x smaller entropy bonus (P1 used 0.01)"
+    },
+    {
+      "id": "diag_entropy_0",
+      "diagnostic_only": true,
+      "axis": "diagnostic_entropy",
+      "methods": ["actor_critic_aux"],
+      "overrides": {"entropy_cost": 0.0},
+      "learning_signal": "AC+aux without an entropy bonus"
+    },
+    {
+      "id": "diag_lr_3e-3",
+      "diagnostic_only": true,
+      "axis": "diagnostic_learning_rate",
+      "methods": ["disco"],
+      "overrides": {"learning_rate": 0.003},
+      "learning_signal": "Disco103 at 10x the P1 learning rate (P1 used 3e-4)"
+    },
+    {
+      "id": "diag_lr_1e-2",
+      "diagnostic_only": true,
+      "axis": "diagnostic_learning_rate",
+      "methods": ["disco"],
+      "overrides": {"learning_rate": 0.01},
+      "learning_signal": "Disco103 at the upstream evaluation colab's learning rate"
+    },
+    {
+      "id": "control_bandit",
+      "diagnostic_only": true,
+      "axis": "positive_control",
+      "overrides": {"environment": "cue_recall", "control_delay": 0, "control_fixed_cue": 3,
+                    "purpose": "development", "credit_window": 1, "steps": 300000, "eval_every": 100},
+      "learning_signal": "one-answer bandit (action 3 always pays): needs no perception, only following reward"
+    },
+    {
+      "id": "control_bandit_lr_1e-2",
+      "diagnostic_only": true,
+      "axis": "positive_control",
+      "methods": ["disco"],
+      "overrides": {"environment": "cue_recall", "control_delay": 0, "control_fixed_cue": 3,
+                    "purpose": "development", "credit_window": 1, "steps": 300000, "eval_every": 100,
+                    "learning_rate": 0.01},
+      "learning_signal": "control_bandit with Disco103 at the upstream colab's learning rate"
+    },
+    {
+      "id": "control_reactive",
+      "diagnostic_only": true,
+      "axis": "positive_control",
+      "overrides": {"environment": "cue_recall", "control_delay": 0, "purpose": "development", "credit_window": 1,
+                    "steps": 2000000, "eval_every": 100},
+      "learning_signal": "synthetic dense task: the cue colour names the rewarded action on the same step"
+    },
+    {
+      "id": "control_memory",
+      "diagnostic_only": true,
+      "axis": "positive_control",
+      "overrides": {"environment": "cue_recall", "control_delay": 8, "purpose": "development", "credit_window": 1,
+                    "steps": 2000000, "eval_every": 200},
+      "learning_signal": "synthetic delayed task: hold the cue for 8 steps, reward only on the go step"
+    },
+    {
+      "id": "control_reactive_lr_1e-2",
+      "diagnostic_only": true,
+      "axis": "positive_control",
+      "methods": ["disco"],
+      "overrides": {"environment": "cue_recall", "control_delay": 0, "purpose": "development", "credit_window": 1,
+                    "steps": 2000000, "eval_every": 100, "learning_rate": 0.01},
+      "learning_signal": "control_reactive with Disco103 at the upstream colab's learning rate"
+    },
+    {
+      "id": "control_memory_lr_1e-2",
+      "diagnostic_only": true,
+      "axis": "positive_control",
+      "methods": ["disco"],
+      "overrides": {"environment": "cue_recall", "control_delay": 8, "purpose": "development", "credit_window": 1,
+                    "steps": 2000000, "eval_every": 200, "learning_rate": 0.01},
+      "learning_signal": "control_memory with Disco103 at the upstream colab's learning rate"
     }
   ],
   "stages": [
@@ -79,6 +170,25 @@
       "seeds": [0, 1, 2, 3, 4],
       "conditions": "all",
       "purpose": "descriptive effects and variances for the power plan; not confirmatory"
+    },
+    {
+      "id": "P1d_diagnostics",
+      "profile": "pilot",
+      "seeds": [0, 1, 2],
+      "conditions": ["control_bandit", "control_bandit_lr_1e-2", "control_reactive",
+                     "control_memory", "control_reactive_lr_1e-2",
+                     "control_memory_lr_1e-2", "diag_fresh", "diag_entropy_1e-3", "diag_entropy_0",
+                     "diag_lr_3e-3", "diag_lr_1e-2"],
+      "overrides": {"steps": 2000000, "credit_window": 8, "validation_policy": "sampled",
+                    "eval_every": 500},
+      "runs_root": "runs/diagnostics",
+      "purpose": "why P1 failed G2: learner positive control, reward-credit diagnostics, the AC+aux entropy bonus and the Disco103 learning rate; diagnostic, not a study result",
+      "criteria": {
+        "control_bandit": "last-quarter training reward >= 0.8 per step (chance 1/6, optimum 1) in every seed",
+        "control_reactive": "last-quarter training reward >= 0.8 per step (chance 1/6, optimum 1) in every seed",
+        "control_memory": "last-quarter training reward >= 0.5 per trial (chance 1/6, optimum 1) in every seed",
+        "memory_maze": "last-quarter on-policy reward rate above the scripted uniform reference (rate-ratio 95% CI above 1); credit gap = update log-prob gain on reward-proximal minus distal steps, reported with a block standard error"
+      }
     }
   ],
   "matching": [
