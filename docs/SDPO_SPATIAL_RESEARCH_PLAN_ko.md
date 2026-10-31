@@ -166,6 +166,13 @@ python -m disco_spatial report --reference fresh \
   --output runs/reports/pilot.json
 ```
 
+**P1d 결과 (2026-10-31; 45개 run, 조건당 3 seeds).** G2는 여전히 통과하지 못했고, 연구는 여기서 멈춘다. 그림이 포함된 전체 보고서는 [README](../README_ko.md#3-p1d-왜-실패했나)에, 수치는 [`reports/results/summary.json`](../reports/results/summary.json)에 있다.
+
+* **Positive control:** AC+aux는 bandit을 3/3 seed, 반응형 cue 과제를 1/3 seed에서 통과했다(trial당 0.98; 나머지는 0.67과 0.17). Disco103은 3e-4에서 bandit을 통과하지 못했고(0/3, credit gap 0) 1e-2에서는 2/3 seed가 통과했다. 하지만 두 lr 모두 반응형·기억 과제에서는 chance 수준이었다. 8 step 기억 대조군을 통과한 run은 없다.
+* **Memory Maze, Disco103:** credit gap이 3e-4, 3e-3, 1e-2에서 모두 0이었고, 정책은 균일로 돌아갔다(1000 step당 0.175–0.178, 균일 정책은 0.203).
+* **Memory Maze, AC+aux:** credit gap이 9개 run 모두 양수였다(+4 ~ +19 ×10⁻³). Entropy 0.01은 정책을 균일하게 묶어 두었고, 1e-3은 보상률을 0.318로 올렸으며(1.56배, 95% CI 1.35–1.81), 0은 정책을 `forward_right`로 붕괴시켰다(0.264).
+* Scripted 기준선은 32 episode뿐이라, 균일 기준선으로는 AC+aux entropy 0.01 run의 마지막 1/4을 합산해 대신 쓴다.
+
 ## 지금까지 실행한 것 (연구 결과 아님)
 
 요약은 [`reports/development/smoke_summary.json`](../reports/development/smoke_summary.json)에 있다. 원자료는 gitignore된 `runs/smoke`, `runs/teacher_validation`, `datasets/smoke`에 있다.

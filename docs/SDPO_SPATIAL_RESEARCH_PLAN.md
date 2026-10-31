@@ -166,6 +166,13 @@ python -m disco_spatial report --reference fresh \
   --output runs/reports/pilot.json
 ```
 
+**P1d results (2026-10-31; 45 runs, 3 seeds per condition).** G2 is still not met, and the study is paused here. The full report with figures is in the [README](../README.md#3-p1d-why-did-it-fail); the numbers are in [`reports/results/summary.json`](../reports/results/summary.json).
+
+* **Positive controls:** AC+aux passed the bandit in 3/3 seeds and the reactive cue task in 1/3 (0.98 per trial; the others reached 0.67 and 0.17). Disco103 failed the bandit at 3e-4 (0/3, credit gap 0) and passed it in 2/3 seeds at 1e-2, but stayed at chance on the reactive and memory tasks at both learning rates. No run passed the 8-step memory control.
+* **Memory Maze, Disco103:** the credit gap was 0 at 3e-4, 3e-3 and 1e-2, and the policy returned to uniform (0.175–0.178 rewards per 1000 steps, against 0.203 for a uniform policy).
+* **Memory Maze, AC+aux:** the credit gap was positive in all 9 runs (+4 to +19 ×10⁻³). Entropy cost 0.01 kept the policy uniform; 1e-3 raised the reward rate to 0.318 (1.56×, 95% CI 1.35–1.81); 0 collapsed the policy onto `forward_right` (0.264).
+* The scripted references used only 32 episodes, so the uniform baseline is the pooled last quarter of the AC+aux entropy-0.01 runs instead.
+
 ## What has been run so far (not research results)
 
 The summary is in [`reports/development/smoke_summary.json`](../reports/development/smoke_summary.json); the raw data is in the gitignored `runs/smoke`, `runs/teacher_validation` and `datasets/smoke`.
