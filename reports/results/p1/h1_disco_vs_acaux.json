@@ -1,0 +1,336 @@
+{
+  "schema_version": 1,
+  "reference": "actor_critic_aux",
+  "conditions": {
+    "actor_critic_aux": {
+      "seen_hidden_target_location_rmse": {
+        "aggregate": {
+          "metric": "value",
+          "mean": 4.352412470686433,
+          "std_across_training_seeds": 0.03558942596237559,
+          "seeds": [
+            0,
+            1,
+            2
+          ],
+          "per_seed": [
+            4.3268941885597565,
+            4.393068210078401,
+            4.3372750134211415
+          ],
+          "n_training_seeds": 3,
+          "n_layout_clusters_per_seed": [
+            7,
+            7,
+            7
+          ],
+          "n_episode_records": 21,
+          "hierarchical_bootstrap_ci95": [
+            3.5582872636046092,
+            5.080784230296323
+          ],
+          "bootstrap_samples": 2000,
+          "aggregation": "episodes within layout; layouts within training seed; training seeds equally weighted",
+          "caveat": "Intervals are descriptive with few seeds; no frame-level pseudo-replication."
+        },
+        "paired_vs_reference": null
+      },
+      "known_wall_balanced_iou": {
+        "aggregate": {
+          "metric": "value",
+          "mean": 0.28974088392344416,
+          "std_across_training_seeds": 0.007326564955293605,
+          "seeds": [
+            0,
+            1,
+            2
+          ],
+          "per_seed": [
+            0.28619845102835617,
+            0.28485876053809334,
+            0.298165440203883
+          ],
+          "n_training_seeds": 3,
+          "n_layout_clusters_per_seed": [
+            8,
+            8,
+            8
+          ],
+          "n_episode_records": 24,
+          "hierarchical_bootstrap_ci95": [
+            0.2591510192971046,
+            0.31824364878468475
+          ],
+          "bootstrap_samples": 2000,
+          "aggregation": "episodes within layout; layouts within training seed; training seeds equally weighted",
+          "caveat": "Intervals are descriptive with few seeds; no frame-level pseudo-replication."
+        },
+        "paired_vs_reference": null
+      },
+      "task_return": {
+        "aggregate": {
+          "metric": "value",
+          "mean": 0.2916666666666667,
+          "std_across_training_seeds": 0.40181878170803975,
+          "seeds": [
+            0,
+            1,
+            2
+          ],
+          "per_seed": [
+            0.0,
+            0.125,
+            0.75
+          ],
+          "n_training_seeds": 3,
+          "n_layout_clusters_per_seed": [
+            8,
+            8,
+            8
+          ],
+          "n_episode_records": 24,
+          "hierarchical_bootstrap_ci95": [
+            0.0,
+            0.8333333333333334
+          ],
+          "bootstrap_samples": 2000,
+          "aggregation": "episodes within layout; layouts within training seed; training seeds equally weighted",
+          "caveat": "Intervals are descriptive with few seeds; no frame-level pseudo-replication."
+        },
+        "paired_vs_reference": null
+      },
+      "memory_reset_return_drop": {
+        "aggregate": {
+          "metric": "value",
+          "mean": -0.08333333333333333,
+          "std_across_training_seeds": 0.07216878364870323,
+          "seeds": [
+            0,
+            1,
+            2
+          ],
+          "per_seed": [
+            -0.125,
+            0.0,
+            -0.125
+          ],
+          "n_training_seeds": 3,
+          "n_layout_clusters_per_seed": [
+            8,
+            8,
+            8
+          ],
+          "n_episode_records": 24,
+          "hierarchical_bootstrap_ci95": [
+            -0.5833333333333334,
+            0.3333333333333333
+          ],
+          "bootstrap_samples": 2000,
+          "aggregation": "episodes within layout; layouts within training seed; training seeds equally weighted",
+          "caveat": "Intervals are descriptive with few seeds; no frame-level pseudo-replication."
+        },
+        "paired_vs_reference": null
+      }
+    },
+    "disco": {
+      "seen_hidden_target_location_rmse": {
+        "aggregate": {
+          "metric": "value",
+          "mean": 4.274400050240074,
+          "std_across_training_seeds": 0.03230081569182225,
+          "seeds": [
+            0,
+            1,
+            2
+          ],
+          "per_seed": [
+            4.265307727617006,
+            4.247619865669179,
+            4.310272557434038
+          ],
+          "n_training_seeds": 3,
+          "n_layout_clusters_per_seed": [
+            7,
+            7,
+            7
+          ],
+          "n_episode_records": 21,
+          "hierarchical_bootstrap_ci95": [
+            3.4548781526482233,
+            5.00682157830882
+          ],
+          "bootstrap_samples": 2000,
+          "aggregation": "episodes within layout; layouts within training seed; training seeds equally weighted",
+          "caveat": "Intervals are descriptive with few seeds; no frame-level pseudo-replication."
+        },
+        "paired_vs_reference": {
+          "shared_seeds": [
+            0,
+            1,
+            2
+          ],
+          "differences": [
+            -0.061586460942750776,
+            -0.14544834440922205,
+            -0.027002455987103602
+          ],
+          "mean_difference": -0.07801242044635881,
+          "better_direction": "lower",
+          "sign_flip_p_descriptive": 0.25
+        }
+      },
+      "known_wall_balanced_iou": {
+        "aggregate": {
+          "metric": "value",
+          "mean": 0.28915637771470765,
+          "std_across_training_seeds": 0.0034710034969700375,
+          "seeds": [
+            0,
+            1,
+            2
+          ],
+          "per_seed": [
+            0.2864428920861492,
+            0.2879585927676026,
+            0.29306764829037124
+          ],
+          "n_training_seeds": 3,
+          "n_layout_clusters_per_seed": [
+            8,
+            8,
+            8
+          ],
+          "n_episode_records": 24,
+          "hierarchical_bootstrap_ci95": [
+            0.2598059738962374,
+            0.3172329788489371
+          ],
+          "bootstrap_samples": 2000,
+          "aggregation": "episodes within layout; layouts within training seed; training seeds equally weighted",
+          "caveat": "Intervals are descriptive with few seeds; no frame-level pseudo-replication."
+        },
+        "paired_vs_reference": {
+          "shared_seeds": [
+            0,
+            1,
+            2
+          ],
+          "differences": [
+            0.00024444105779303227,
+            0.0030998322295092695,
+            -0.005097791913511784
+          ],
+          "mean_difference": -0.0005845062087364942,
+          "better_direction": "higher",
+          "sign_flip_p_descriptive": 1.0
+        }
+      },
+      "task_return": {
+        "aggregate": {
+          "metric": "value",
+          "mean": 0.08333333333333333,
+          "std_across_training_seeds": 0.07216878364870323,
+          "seeds": [
+            0,
+            1,
+            2
+          ],
+          "per_seed": [
+            0.0,
+            0.125,
+            0.125
+          ],
+          "n_training_seeds": 3,
+          "n_layout_clusters_per_seed": [
+            8,
+            8,
+            8
+          ],
+          "n_episode_records": 24,
+          "hierarchical_bootstrap_ci95": [
+            0.0,
+            0.3333333333333333
+          ],
+          "bootstrap_samples": 2000,
+          "aggregation": "episodes within layout; layouts within training seed; training seeds equally weighted",
+          "caveat": "Intervals are descriptive with few seeds; no frame-level pseudo-replication."
+        },
+        "paired_vs_reference": {
+          "shared_seeds": [
+            0,
+            1,
+            2
+          ],
+          "differences": [
+            0.0,
+            0.0,
+            -0.625
+          ],
+          "mean_difference": -0.20833333333333334,
+          "better_direction": "higher",
+          "sign_flip_p_descriptive": 1.0
+        }
+      },
+      "memory_reset_return_drop": {
+        "aggregate": {
+          "metric": "value",
+          "mean": 0.08333333333333333,
+          "std_across_training_seeds": 0.07216878364870323,
+          "seeds": [
+            0,
+            1,
+            2
+          ],
+          "per_seed": [
+            0.0,
+            0.125,
+            0.125
+          ],
+          "n_training_seeds": 3,
+          "n_layout_clusters_per_seed": [
+            8,
+            8,
+            8
+          ],
+          "n_episode_records": 24,
+          "hierarchical_bootstrap_ci95": [
+            0.0,
+            0.3333333333333333
+          ],
+          "bootstrap_samples": 2000,
+          "aggregation": "episodes within layout; layouts within training seed; training seeds equally weighted",
+          "caveat": "Intervals are descriptive with few seeds; no frame-level pseudo-replication."
+        },
+        "paired_vs_reference": {
+          "shared_seeds": [
+            0,
+            1,
+            2
+          ],
+          "differences": [
+            0.125,
+            0.125,
+            0.25
+          ],
+          "mean_difference": 0.16666666666666666,
+          "better_direction": "higher",
+          "sign_flip_p_descriptive": 0.25
+        }
+      }
+    }
+  },
+  "seeds": {
+    "actor_critic_aux": [
+      0,
+      1,
+      2
+    ],
+    "disco": [
+      0,
+      1,
+      2
+    ]
+  },
+  "status": "pilot_descriptive_not_confirmatory",
+  "caveat": "No Holm-adjusted confirmatory claim: the design, seed bank and power plan are not locked."
+}

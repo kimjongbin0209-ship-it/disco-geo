@@ -1,0 +1,633 @@
+{
+ "note": "Pilot and diagnostic evidence; not a study result.",
+ "P1_learning_gate": {
+  "runs": {
+   "actor_critic_aux-fresh-seed0": {
+    "method": "actor_critic_aux",
+    "condition": "fresh",
+    "seed": 0,
+    "transitions": 5000000,
+    "last_quarter_reward_events": 266,
+    "last_quarter_steps": 1249856,
+    "last_quarter_reward_per_1000": 0.2128245173844027,
+    "entropy_min": 1.5123283863067627,
+    "entropy_last_quarter": 1.7833818975448608
+   },
+   "actor_critic_aux-fresh-seed1": {
+    "method": "actor_critic_aux",
+    "condition": "fresh",
+    "seed": 1,
+    "transitions": 5000000,
+    "last_quarter_reward_events": 259,
+    "last_quarter_steps": 1249856,
+    "last_quarter_reward_per_1000": 0.2072238721900763,
+    "entropy_min": 1.7011218070983887,
+    "entropy_last_quarter": 1.7818558221817016
+   },
+   "actor_critic_aux-fresh-seed2": {
+    "method": "actor_critic_aux",
+    "condition": "fresh",
+    "seed": 2,
+    "transitions": 5000000,
+    "last_quarter_reward_events": 242,
+    "last_quarter_steps": 1249856,
+    "last_quarter_reward_per_1000": 0.19362230528956936,
+    "entropy_min": 1.3504726886749268,
+    "entropy_last_quarter": 1.7837134881019592
+   },
+   "actor_critic_aux-teacher_only-seed0": {
+    "method": "actor_critic_aux",
+    "condition": "teacher_only",
+    "seed": 0,
+    "transitions": 5000000,
+    "last_quarter_reward_events": 225,
+    "last_quarter_steps": 1249856,
+    "last_quarter_reward_per_1000": 0.1800207383890624,
+    "entropy_min": 1.53778076171875,
+    "entropy_last_quarter": 1.7829453555107118
+   },
+   "actor_critic_aux-teacher_only-seed1": {
+    "method": "actor_critic_aux",
+    "condition": "teacher_only",
+    "seed": 1,
+    "transitions": 5000000,
+    "last_quarter_reward_events": 279,
+    "last_quarter_steps": 1249856,
+    "last_quarter_reward_per_1000": 0.2232257156024374,
+    "entropy_min": 1.6868141889572144,
+    "entropy_last_quarter": 1.782395237827301
+   },
+   "actor_critic_aux-teacher_only-seed2": {
+    "method": "actor_critic_aux",
+    "condition": "teacher_only",
+    "seed": 2,
+    "transitions": 5000000,
+    "last_quarter_reward_events": 262,
+    "last_quarter_steps": 1249856,
+    "last_quarter_reward_per_1000": 0.20962414870193047,
+    "entropy_min": 1.315904140472412,
+    "entropy_last_quarter": 1.7833811686515808
+   },
+   "disco-fresh-seed0": {
+    "method": "disco",
+    "condition": "fresh",
+    "seed": 0,
+    "transitions": 5000000,
+    "last_quarter_reward_events": 239,
+    "last_quarter_steps": 1249856,
+    "last_quarter_reward_per_1000": 0.1912220287777152,
+    "entropy_min": 0.7505528330802917,
+    "entropy_last_quarter": 1.791686789703369
+   },
+   "disco-fresh-seed1": {
+    "method": "disco",
+    "condition": "fresh",
+    "seed": 1,
+    "transitions": 5000000,
+    "last_quarter_reward_events": 210,
+    "last_quarter_steps": 1249856,
+    "last_quarter_reward_per_1000": 0.1680193558297916,
+    "entropy_min": 1.127924919128418,
+    "entropy_last_quarter": 1.7915854839324952
+   },
+   "disco-fresh-seed2": {
+    "method": "disco",
+    "condition": "fresh",
+    "seed": 2,
+    "transitions": 5000000,
+    "last_quarter_reward_events": 220,
+    "last_quarter_steps": 1249856,
+    "last_quarter_reward_per_1000": 0.17602027753597213,
+    "entropy_min": 0.8798641562461853,
+    "entropy_last_quarter": 1.7916211298942566
+   },
+   "disco-teacher_only-seed0": {
+    "method": "disco",
+    "condition": "teacher_only",
+    "seed": 0,
+    "transitions": 5000000,
+    "last_quarter_reward_events": 201,
+    "last_quarter_steps": 1249856,
+    "last_quarter_reward_per_1000": 0.1608185262942291,
+    "entropy_min": 0.7505500912666321,
+    "entropy_last_quarter": 1.7896383749008178
+   },
+   "disco-teacher_only-seed1": {
+    "method": "disco",
+    "condition": "teacher_only",
+    "seed": 1,
+    "transitions": 5000000,
+    "last_quarter_reward_events": 233,
+    "last_quarter_steps": 1249856,
+    "last_quarter_reward_per_1000": 0.18642147575400686,
+    "entropy_min": 1.1279734373092651,
+    "entropy_last_quarter": 1.7916114472389222
+   },
+   "disco-teacher_only-seed2": {
+    "method": "disco",
+    "condition": "teacher_only",
+    "seed": 2,
+    "transitions": 5000000,
+    "last_quarter_reward_events": 241,
+    "last_quarter_steps": 1249856,
+    "last_quarter_reward_per_1000": 0.1928222131189513,
+    "entropy_min": 0.8748123049736023,
+    "entropy_last_quarter": 1.791610128593445
+   }
+  },
+  "pooled": {
+   "actor_critic_aux": {
+    "runs": 6,
+    "last_quarter_reward_per_1000": 0.20442354959291312,
+    "entropy_last_quarter": [
+     1.783,
+     1.782,
+     1.784,
+     1.783,
+     1.782,
+     1.783
+    ]
+   },
+   "disco": {
+    "runs": 6,
+    "last_quarter_reward_per_1000": 0.17922064621844436,
+    "entropy_last_quarter": [
+     1.792,
+     1.792,
+     1.792,
+     1.79,
+     1.792,
+     1.792
+    ]
+   }
+  }
+ },
+ "P1d_diagnostics": {
+  "uniform_policy_baseline": {
+   "source": "AC+aux entropy 0.01, pooled last quarter (policy stayed uniform)",
+   "reward_events": 305,
+   "steps": 1499136,
+   "reward_per_1000": 0.20345052083333334
+  },
+  "maze": {
+   "actor_critic_aux-diag_fresh": {
+    "label": "AC+aux entropy 0.01",
+    "method": "actor_critic_aux",
+    "condition": "diag_fresh",
+    "learning_rate": 0.0003,
+    "entropy_cost": 0.01,
+    "reward_per_1000_per_seed": [
+     0.20211641905737704,
+     0.19611296106557377,
+     0.2121221823770492
+    ],
+    "pooled_reward_events": 305,
+    "pooled_reward_per_1000": 0.20345052083333334,
+    "credit_gap_per_seed": [
+     0.010118351294314938,
+     0.019054874965858035,
+     0.01264846210234434
+    ],
+    "credit_gap_se_per_seed": [
+     0.000919355307481839,
+     0.0008825957139879016,
+     0.0012577917417947787
+    ],
+    "entropy_min_per_seed": [
+     1.5332605838775635,
+     1.6988494396209717,
+     1.2864468097686768
+    ],
+    "entropy_last_quarter_per_seed": [
+     1.7846598374843596,
+     1.7820031583309173,
+     1.7821510384082795
+    ]
+   },
+   "actor_critic_aux-diag_entropy_1e-3": {
+    "label": "AC+aux entropy 1e-3",
+    "method": "actor_critic_aux",
+    "condition": "diag_entropy_1e-3",
+    "learning_rate": 0.0003,
+    "entropy_cost": 0.001,
+    "reward_per_1000_per_seed": [
+     0.33419249487704916,
+     0.31618212090163933,
+     0.3041752049180328
+    ],
+    "pooled_reward_events": 477,
+    "pooled_reward_per_1000": 0.31818327356557374,
+    "credit_gap_per_seed": [
+     0.009938609548385742,
+     0.017304342042474264,
+     0.009769051972640212
+    ],
+    "credit_gap_se_per_seed": [
+     0.0007967650009960706,
+     0.0006916365132797486,
+     0.0010721044274044523
+    ],
+    "entropy_min_per_seed": [
+     1.0041606426239014,
+     0.839932382106781,
+     0.740929365158081
+    ],
+    "entropy_last_quarter_per_seed": [
+     1.694115458726883,
+     1.6447223510742188,
+     1.674819941997528
+    ],
+    "ratio_vs_uniform_policy": 1.563934426229508,
+    "ratio_ci95": [
+     1.3546008586128688,
+     1.805617406776524
+    ]
+   },
+   "actor_critic_aux-diag_entropy_0": {
+    "label": "AC+aux entropy 0",
+    "method": "actor_critic_aux",
+    "condition": "diag_entropy_0",
+    "learning_rate": 0.0003,
+    "entropy_cost": 0.0,
+    "reward_per_1000_per_seed": [
+     0.2961705942622951,
+     0.2361360143442623,
+     0.2601498463114754
+    ],
+    "pooled_reward_events": 396,
+    "pooled_reward_per_1000": 0.26415215163934425,
+    "credit_gap_per_seed": [
+     0.00528497786524863,
+     0.005684007717576737,
+     0.0042889231786847025
+    ],
+    "credit_gap_se_per_seed": [
+     0.0008133100853770599,
+     0.0009270587408737745,
+     0.0008131908465634864
+    ],
+    "entropy_min_per_seed": [
+     0.19975478947162628,
+     0.025928258895874023,
+     0.03570925444364548
+    ],
+    "entropy_last_quarter_per_seed": [
+     0.7036438351869583,
+     0.15435830445587634,
+     0.27683548524975776
+    ],
+    "ratio_vs_uniform_policy": 1.298360655737705,
+    "ratio_ci95": [
+     1.1182696964742886,
+     1.5074542372761168
+    ]
+   },
+   "disco-diag_fresh": {
+    "label": "Disco103 lr 3e-4",
+    "method": "disco",
+    "condition": "diag_fresh",
+    "learning_rate": 0.0003,
+    "entropy_cost": null,
+    "reward_per_1000_per_seed": [
+     0.20211641905737704,
+     0.20011526639344263,
+     0.12407146516393443
+    ],
+    "pooled_reward_events": 263,
+    "pooled_reward_per_1000": 0.17543438353825136,
+    "credit_gap_per_seed": [
+     3.333946062517262e-05,
+     -1.840170975954366e-05,
+     0.0003464387734084239
+    ],
+    "credit_gap_se_per_seed": [
+     0.0007759001962702721,
+     5.761945467654462e-05,
+     0.00023649197410858467
+    ],
+    "entropy_min_per_seed": [
+     0.15523532032966614,
+     1.127864122390747,
+     0.8804956674575806
+    ],
+    "entropy_last_quarter_per_seed": [
+     1.7602628004550933,
+     1.791137360572815,
+     1.791561365365982
+    ],
+    "ratio_vs_uniform_policy": 0.862295081967213,
+    "ratio_ci95": [
+     0.7311849785733624,
+     1.0169147755682995
+    ]
+   },
+   "disco-diag_lr_3e-3": {
+    "label": "Disco103 lr 3e-3",
+    "method": "disco",
+    "condition": "diag_lr_3e-3",
+    "learning_rate": 0.003,
+    "entropy_cost": null,
+    "reward_per_1000_per_seed": [
+     0.20211641905737704,
+     0.1841060450819672,
+     0.14808529713114754
+    ],
+    "pooled_reward_events": 267,
+    "pooled_reward_per_1000": 0.17810258709016394,
+    "credit_gap_per_seed": [
+     -0.001850379697065811,
+     0.00010283865217128741,
+     -0.0007204022934197222
+    ],
+    "credit_gap_se_per_seed": [
+     0.0020017036505028535,
+     0.00011359552889636902,
+     0.00025584383613602387
+    ],
+    "entropy_min_per_seed": [
+     1.022757887840271,
+     0.4095273017883301,
+     0.8415311574935913
+    ],
+    "entropy_last_quarter_per_seed": [
+     1.7917257914543152,
+     1.791671787261963,
+     1.7917474281787873
+    ],
+    "ratio_vs_uniform_policy": 0.8754098360655738,
+    "ratio_ci95": [
+     0.7427992634864007,
+     1.031695127810779
+    ]
+   },
+   "disco-diag_lr_1e-2": {
+    "label": "Disco103 lr 1e-2",
+    "method": "disco",
+    "condition": "diag_lr_1e-2",
+    "learning_rate": 0.01,
+    "entropy_cost": null,
+    "reward_per_1000_per_seed": [
+     0.1821048924180328,
+     0.16809682377049182,
+     0.17410028176229508
+    ],
+    "pooled_reward_events": 262,
+    "pooled_reward_per_1000": 0.17476733265027322,
+    "credit_gap_per_seed": [
+     -0.00024243993588763963,
+     -0.0008325788638336109,
+     -0.00011437683153790864
+    ],
+    "credit_gap_se_per_seed": [
+     0.00011622774112652107,
+     0.000695492977126989,
+     9.58321665576862e-05
+    ],
+    "entropy_min_per_seed": [
+     0.4633769989013672,
+     1.4459471702575684,
+     0.5827168822288513
+    ],
+    "entropy_last_quarter_per_seed": [
+     1.791634473323822,
+     1.7916267471313476,
+     1.7916079790592194
+    ],
+    "ratio_vs_uniform_policy": 0.8590163934426229,
+    "ratio_ci95": [
+     0.728281770354242,
+     1.0132193255973525
+    ]
+   }
+  },
+  "controls": {
+   "actor_critic_aux-control_bandit": {
+    "task": "One-answer bandit",
+    "learner": "AC+aux lr 3e-4",
+    "method": "actor_critic_aux",
+    "reward_per_trial_per_seed": [
+     0.9926153514445882,
+     0.9851633247089263,
+     0.9821717335058214
+    ],
+    "criterion": 0.8,
+    "chance": 0.16666666666666666,
+    "passed": 3,
+    "entropy_last_quarter_per_seed": [
+     0.05201116199485767,
+     0.09452747935668016,
+     0.10411260630457829
+    ],
+    "credit_gap_per_seed": [
+     0.05686539430598415,
+     0.052045764322023104,
+     0.04923207529274814
+    ]
+   },
+   "disco-control_bandit": {
+    "task": "One-answer bandit",
+    "learner": "Disco103 lr 3e-4",
+    "method": "disco",
+    "reward_per_trial_per_seed": [
+     0.035184885726606295,
+     0.0203751617076326,
+     0.02529376886589047
+    ],
+    "criterion": 0.8,
+    "chance": 0.16666666666666666,
+    "passed": 0,
+    "entropy_last_quarter_per_seed": [
+     0.7284058981981033,
+     0.4311440779994696,
+     0.5405469192908361
+    ],
+    "credit_gap_per_seed": [
+     -0.004723599595127511,
+     -0.004318945894928737,
+     -0.003193032180978652
+    ]
+   },
+   "disco-control_bandit_lr_1e-2": {
+    "task": "One-answer bandit",
+    "learner": "Disco103 lr 1e-2",
+    "method": "disco",
+    "reward_per_trial_per_seed": [
+     0.9884379042690815,
+     0.10253611470461406,
+     0.8264068564036222
+    ],
+    "criterion": 0.8,
+    "chance": 0.16666666666666666,
+    "passed": 2,
+    "entropy_last_quarter_per_seed": [
+     0.0795776605223998,
+     1.2530390941179717,
+     0.7291858811409045
+    ],
+    "credit_gap_per_seed": [
+     0.05241023989275339,
+     -0.00046376495581565945,
+     0.02030875712418046
+    ]
+   },
+   "actor_critic_aux-control_reactive": {
+    "task": "Reactive cue",
+    "learner": "AC+aux lr 3e-4",
+    "method": "actor_critic_aux",
+    "reward_per_trial_per_seed": [
+     0.1668322225070495,
+     0.9831393392719815,
+     0.6663996411176621
+    ],
+    "criterion": 0.8,
+    "chance": 0.16666666666666666,
+    "passed": 1,
+    "entropy_last_quarter_per_seed": [
+     0.006565575525227169,
+     0.06376391893070399,
+     0.013365815188950232
+    ],
+    "credit_gap_per_seed": [
+     0.0002134643913617559,
+     0.003575054603118292,
+     0.0018446245256491366
+    ]
+   },
+   "disco-control_reactive": {
+    "task": "Reactive cue",
+    "learner": "Disco103 lr 3e-4",
+    "method": "disco",
+    "reward_per_trial_per_seed": [
+     0.18949868623429889,
+     0.18585979556523968,
+     0.17688973981030506
+    ],
+    "criterion": 0.8,
+    "chance": 0.16666666666666666,
+    "passed": 0,
+    "entropy_last_quarter_per_seed": [
+     0.8593720254879766,
+     0.9382340876017331,
+     0.8645668970188572
+    ],
+    "credit_gap_per_seed": [
+     9.75302927423713e-05,
+     0.00023718990637883975,
+     8.652709449197203e-05
+    ]
+   },
+   "disco-control_reactive_lr_1e-2": {
+    "task": "Reactive cue",
+    "learner": "Disco103 lr 1e-2",
+    "method": "disco",
+    "reward_per_trial_per_seed": [
+     0.1666039156626506,
+     0.166155312740323,
+     0.16662193988720841
+    ],
+    "criterion": 0.8,
+    "chance": 0.16666666666666666,
+    "passed": 0,
+    "entropy_last_quarter_per_seed": [
+     0.7103549147636099,
+     0.709466218490747,
+     0.724510120338762
+    ],
+    "credit_gap_per_seed": [
+     0.00017606288475435685,
+     7.137565253078444e-06,
+     -9.842286897300523e-05
+    ]
+   },
+   "actor_critic_aux-control_memory": {
+    "task": "Cue held for 8 steps",
+    "learner": "AC+aux lr 3e-4",
+    "method": "actor_critic_aux",
+    "reward_per_trial_per_seed": [
+     0.1641285888233786,
+     0.1618755607536529,
+     0.1583608369648808
+    ],
+    "criterion": 0.5,
+    "chance": 0.16666666666666666,
+    "passed": 0,
+    "entropy_last_quarter_per_seed": [
+     1.6810573529373432,
+     1.7104366004123797,
+     1.7074796396116378
+    ],
+    "credit_gap_per_seed": [
+     0.002682324216026171,
+     0.002460761732451457,
+     0.0026122733589567116
+    ]
+   },
+   "disco-control_memory": {
+    "task": "Cue held for 8 steps",
+    "learner": "Disco103 lr 3e-4",
+    "method": "disco",
+    "reward_per_trial_per_seed": [
+     0.16634556844398873,
+     0.16317330492181492,
+     0.16106447064855164
+    ],
+    "criterion": 0.5,
+    "chance": 0.16666666666666666,
+    "passed": 0,
+    "entropy_last_quarter_per_seed": [
+     1.7055963218326533,
+     1.7422716070731634,
+     1.6461940367711483
+    ],
+    "credit_gap_per_seed": [
+     0.0002622342098542555,
+     3.7770889121402974e-05,
+     1.346844939907839e-05
+    ]
+   },
+   "disco-control_memory_lr_1e-2": {
+    "task": "Cue held for 8 steps",
+    "learner": "Disco103 lr 1e-2",
+    "method": "disco",
+    "reward_per_trial_per_seed": [
+     0.16510189694950014,
+     0.16445302486541913,
+     0.16032547744168163
+    ],
+    "criterion": 0.5,
+    "chance": 0.16666666666666666,
+    "passed": 0,
+    "entropy_last_quarter_per_seed": [
+     1.3305742539279521,
+     1.31242062468904,
+     1.2249748738850834
+    ],
+    "credit_gap_per_seed": [
+     3.103939123014123e-06,
+     8.009885180952528e-05,
+     -0.00025178229861061506
+    ]
+   }
+  },
+  "scripted_references": {
+   "forward_0.5": {
+    "policy": "forward:0.5",
+    "episodes": 32,
+    "rewards": 2.0,
+    "reward_per_1000": 0.0625
+   },
+   "forward_left_0.5": {
+    "policy": "forward_left:0.5",
+    "episodes": 32,
+    "rewards": 13.0,
+    "reward_per_1000": 0.40625
+   },
+   "uniform": {
+    "policy": "uniform",
+    "episodes": 32,
+    "rewards": 5.0,
+    "reward_per_1000": 0.15625
+   }
+  }
+ }
+}
