@@ -154,7 +154,7 @@ Memory Maze run은 2M step으로, P1에서 균일로 돌아간 구간을 덮습�
 
 ## 7. 수치와 그림 재현
 
-원자료는 `runs/` 아래에 있고 git에서 제외됩니다. `reports/results/`의 요약 수치, 단계 보고서, 그림은 추적됩니다. P1d는 commit `a71f68e`의 코드로 돌렸습니다.
+원자료는 `runs/` 아래에 있고 git에서 제외됩니다. `reports/results/`의 요약 수치, 단계 보고서, 그림은 추적됩니다. P1d는 commit `684aa7b`의 코드로 돌렸습니다. 서버에는 `a71f68e`로 기록돼 있는데, 예전 데이터 폴더를 이력에서 빼기 전의 해시이고 코드는 같습니다.
 
 ```bash
 python scripts/expand_conditions.py --stage P1d_diagnostics --output runs/diagnostics/configs

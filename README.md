@@ -154,7 +154,7 @@ The uniform baseline is the AC+aux entropy-0.01 runs: their policy stayed unifor
 
 ## 7. Reproducing the numbers and figures
 
-Raw results are gitignored under `runs/`. The summary numbers, stage reports and figures in `reports/results/` are tracked. P1d ran the code of commit `a71f68e`.
+Raw results are gitignored under `runs/`. The summary numbers, stage reports and figures in `reports/results/` are tracked. P1d ran the code of commit `684aa7b`. The server recorded it as `a71f68e`, its hash before the old data folders were dropped from the history; the code is identical.
 
 ```bash
 python scripts/expand_conditions.py --stage P1d_diagnostics --output runs/diagnostics/configs
